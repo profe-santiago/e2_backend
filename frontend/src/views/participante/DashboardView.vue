@@ -233,6 +233,9 @@
             <router-link to="/participante/registro-inicial" class="btn btn-indigo">Completar Registro</router-link>
           </div>
         </div>
+
+        <!-- Calendario Completo de Eventos -->
+        <CalendarWidget :eventos="data.eventos || []" />
       </template>
 
       <!-- ======================================== -->
@@ -271,6 +274,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import AppLayout from '../../components/layout/AppLayout.vue'
+import CalendarWidget from '../../components/CalendarWidget.vue'
 import api from '../../services/api'
 
 const data = ref({})

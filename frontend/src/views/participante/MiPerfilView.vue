@@ -66,7 +66,12 @@
 
               <div class="form-group">
                 <label for="carrera">Carrera</label>
-                <input id="carrera" type="text" v-model="form.carrera" class="input" placeholder="Ingeniería en Sistemas Computacionales" />
+                <select id="carrera" v-model="form.carrera" class="input">
+                  <option value="" disabled>Selecciona una carrera</option>
+                  <option v-for="(nombre, idx) in carrerasDisponibles" :key="idx" :value="nombre">
+                    {{ nombre }}
+                  </option>
+                </select>
               </div>
 
               <div class="form-actions">
@@ -87,6 +92,18 @@ import { ref, computed, onMounted } from 'vue'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import { useAuthStore } from '../../stores/auth'
 import api from '../../services/api'
+
+const carrerasDisponibles = [
+  'Ingeniería en Sistemas Computacionales',
+  'Ingeniería Mecánica',
+  'Ingeniería Eléctrica',
+  'Ingeniería Electrónica',
+  'Ingeniería Química',
+  'Ingeniería Industrial',
+  'Ingeniería en Gestión Empresarial',
+  'Licenciatura en Administración',
+  'Contador Público'
+]
 
 const auth = useAuthStore()
 const loading = ref(true)
