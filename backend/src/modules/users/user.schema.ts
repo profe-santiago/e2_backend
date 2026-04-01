@@ -50,5 +50,8 @@ export const updateUserSchema = z.object({
     email: z.string().email('Debe ser un email válido').optional(),
     password: z.string().min(6).optional(),
     rol_id: z.number().positive().optional(),
+    telefono: z.string().optional(),
+    no_control: z.string().optional(),
+    carrera: z.string().optional(),
   }),
 });

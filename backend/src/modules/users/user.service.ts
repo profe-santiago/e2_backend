@@ -103,7 +103,10 @@ export class UserService {
     await userRepository.update(id, {
       nombre: data.nombre,
       email: data.email,
-      password: hashedPassword
+      password: hashedPassword,
+      telefono: data.telefono,
+      no_control: data.no_control,
+      carrera: data.carrera
     });
 
     if (data.rol_id) {

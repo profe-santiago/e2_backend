@@ -10,6 +10,9 @@ export interface UpdateUserDto {
   email?: string;
   password?: string;
   rol_id?: number;
+  telefono?: string;
+  no_control?: string;
+  carrera?: string;
 }
 
 export interface UserQueryOptions {

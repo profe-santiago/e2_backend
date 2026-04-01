@@ -9,6 +9,8 @@ const authRepository = new AuthRepository();
 
 // Get user roles from the users.role enum field OR legacy junction tables
 async function getUserRoles(user: any): Promise<string[]> {
+  const roles: string[] = [];
+
   try {
     // 1. Check legacy user_rol table first for existing users (Admins / Jueces usually seeded here)
     const legacyRolRows = await prisma.$queryRaw<Array<{ nombre: string }>>`
@@ -18,42 +20,44 @@ async function getUserRoles(user: any): Promise<string[]> {
       WHERE ur.user_id = ${user.id}
     `;
     if (legacyRolRows && legacyRolRows.length > 0) {
-      return legacyRolRows.map(r => r.nombre);
+      legacyRolRows.forEach(r => {
+        const name = r.nombre.toLowerCase();
+        if (name === 'admin' || name === 'administrador') roles.push('Admin');
+        else if (name === 'juez') roles.push('Juez');
+        else if (name === 'participante') roles.push('Participante');
+        else roles.push(r.nombre);
+      });
     }
   } catch (err) {
     // Table might not exist, proceed
   }
 
-  // 2. Check new users.role enum field
+  // 2. Check new users.role enum field if no legacy roles found or to complement
   if (user.role) {
-    const role = user.role.toString();
-    const roleMap: Record<string, string> = {
-      'ADMIN': 'Admin', 'JUEZ': 'Juez', 'PARTICIPANTE': 'Participante',
-      'Admin': 'Admin', 'Juez': 'Juez', 'Participante': 'Participante'
-    };
-    if (roleMap[role]) {
-      return [roleMap[role]];
-    }
+    const role = user.role.toString().toUpperCase();
+    if (role === 'ADMIN' && !roles.includes('Admin')) roles.push('Admin');
+    else if (role === 'JUEZ' && !roles.includes('Juez')) roles.push('Juez');
+    else if (role === 'PARTICIPANTE' && !roles.includes('Participante')) roles.push('Participante');
   }
 
   // Fallback: raw SQL in case the Prisma client has stale types and user.role was undefined in object
-  try {
-    const rows = await prisma.$queryRaw<Array<{ role: string }>>`
-      SELECT role FROM users WHERE id = ${user.id}
-    `;
-    if (rows.length > 0 && rows[0].role) {
-      const roleMap: Record<string, string> = {
-        'ADMIN': 'Admin', 'JUEZ': 'Juez', 'PARTICIPANTE': 'Participante'
-      };
-      if (roleMap[rows[0].role]) {
-        return [roleMap[rows[0].role]];
+  if (roles.length === 0) {
+    try {
+      const rows = await prisma.$queryRaw<Array<{ role: string }>>`
+        SELECT role FROM users WHERE id = ${user.id}
+      `;
+      if (rows.length > 0 && rows[0].role) {
+        const role = rows[0].role.toUpperCase();
+        if (role === 'ADMIN') roles.push('Admin');
+        else if (role === 'JUEZ') roles.push('Juez');
+        else if (role === 'PARTICIPANTE') roles.push('Participante');
       }
+    } catch (err) {
+      console.error('[getUserRoles] Error:', err);
     }
-  } catch (err) {
-    console.error('[getUserRoles] Error:', err);
   }
 
-  return ['Participante'];
+  return roles.length > 0 ? roles : ['Participante'];
 }
 
 // Map role name to dashboard route

@@ -20,6 +20,7 @@ const routes = [
   { path: '/juez/evaluar/:proyectoId', name: 'Evaluacion', component: () => import('../views/juez/EvaluacionView.vue'), meta: { role: 'Juez' } },
   // Participante
   { path: '/participante/dashboard', name: 'ParticipanteDashboard', component: () => import('../views/participante/DashboardView.vue'), meta: { role: 'Participante' } },
+  { path: '/participante/perfil', name: 'MiPerfil', component: () => import('../views/participante/MiPerfilView.vue'), meta: { role: 'Participante' } },
   { path: '/participante/registro-inicial', name: 'RegistroInicial', component: () => import('../views/participante/RegistroInicialView.vue'), meta: { role: 'Participante' } },
   { path: '/participante/equipos/crear', name: 'CrearEquipo', component: () => import('../views/participante/EquipoCreateView.vue'), meta: { role: 'Participante' } },
   { path: '/participante/equipos/editar', name: 'EditarEquipo', component: () => import('../views/participante/EquipoEditView.vue'), meta: { role: 'Participante' } },

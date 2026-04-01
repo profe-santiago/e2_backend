@@ -64,6 +64,9 @@ export class UserRepository {
     if (data.nombre) updateData.name = data.nombre;
     if (data.email) updateData.email = data.email;
     if (data.password) updateData.password = data.password;
+    if (data.telefono !== undefined) updateData.telefono = data.telefono;
+    if (data.no_control !== undefined) updateData.no_control = data.no_control;
+    if (data.carrera !== undefined) updateData.carrera = data.carrera;
 
     return prisma.users.update({
       where: { id: BigInt(id) },
@@ -82,7 +85,7 @@ export class UserRepository {
     const roleName = roleMap[Number(role)] || role;
     return prisma.users.update({
       where: { id: BigInt(userId) },
-      data: { role: roleName as any }
+      data: { role: roleName as any, updated_at: new Date() }
     });
   }
 }

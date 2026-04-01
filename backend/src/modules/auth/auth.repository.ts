@@ -30,8 +30,10 @@ export class AuthRepository {
         name: data.name,
         email: data.email,
         password: data.password,
-        ...(data.role ? { role: data.role as any } : {}),
-      } as any,
+        role: (data.role as any) || 'PARTICIPANTE',
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
     });
   }
 
@@ -39,7 +41,7 @@ export class AuthRepository {
     try {
       return await prisma.users.update({
         where: { id: BigInt(userId) },
-        data: { role } as any,
+        data: { role, updated_at: new Date() } as any,
       });
     } catch {
       return null;

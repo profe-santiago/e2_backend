@@ -29,6 +29,7 @@
             <div class="form-group" style="margin:0"><label>Nombre completo</label><input v-model="name" class="form-control" placeholder="Tu nombre completo" required></div>
             <div class="form-group" style="margin:0"><label>Correo electrónico</label><input v-model="email" type="email" class="form-control" placeholder="nombre@ejemplo.com" required></div>
             <div class="form-group" style="margin:0"><label>Contraseña</label><input v-model="password" type="password" class="form-control" placeholder="Mínimo 8 caracteres" required minlength="8"></div>
+            <div class="form-group" style="margin:0"><label>Confirmar contraseña</label><input v-model="password_confirmation" type="password" class="form-control" placeholder="Mínimo 8 caracteres" required minlength="8"></div>
             <button type="submit" class="btn btn-indigo btn-block" style="padding:.75rem;font-weight:700;border-radius:.75rem" :disabled="loading">{{ loading ? 'Registrando...' : 'Crear Cuenta' }}</button>
             <div style="text-align:center;font-size:.875rem;color:#6b7280">¿Ya tienes cuenta? <router-link to="/login" style="font-weight:700;color:#4f46e5;text-decoration:none">Inicia sesión</router-link></div>
           </form>
@@ -42,11 +43,16 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 const auth = useAuthStore(); const router = useRouter()
-const name = ref(''); const email = ref(''); const password = ref(''); const error = ref(''); const loading = ref(false)
+const name = ref(''); const email = ref(''); const password = ref(''); const password_confirmation = ref(''); const error = ref(''); const loading = ref(false)
 const isDark = ref(localStorage.getItem('color-theme') === 'dark')
 function toggleTheme() { isDark.value = !isDark.value; localStorage.setItem('color-theme', isDark.value ? 'dark' : 'light') }
 async function handleRegister() {
   loading.value = true; error.value = ''
+  if (password.value !== password_confirmation.value) {
+    error.value = 'Las contraseñas no coinciden'
+    loading.value = false
+    return
+  }
   try { await auth.register(name.value, email.value, password.value); router.push(auth.dashboardRoute) }
   catch (e) { error.value = e.response?.data?.message || 'Error al registrar' }
   finally { loading.value = false }
