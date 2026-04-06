@@ -1,6 +1,15 @@
 <template>
   <AppLayout>
-    <h2 style="font-size:1.5rem;font-weight:700;margin-bottom:1.5rem">Gestión de Equipos</h2>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem">
+      <div>
+        <h2 style="font-size:1.5rem;font-weight:700">Gestión de Equipos</h2>
+      </div>
+      <nav style="font-size:.875rem;color:var(--text-muted);display:flex;gap:.5rem;align-items:center;margin-top:.25rem">
+        <router-link to="/admin/dashboard" style="color:inherit;text-decoration:none" class="hover:text-indigo-600">Dashboard</router-link>
+        <span>/</span>
+        <span style="color:#4f46e5;font-weight:600">Equipos</span>
+      </nav>
+    </div>
     <div class="table-container">
       <div v-if="loading" class="loading"><div class="spinner"></div></div>
       <table v-else>

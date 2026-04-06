@@ -1,6 +1,15 @@
 <template>
   <AppLayout>
-    <!-- No Header as requested -->
+    <div style="max-width:48rem;margin:0 auto 1.5rem;display:flex;justify-content:space-between;align-items:center">
+      <h2 style="font-size:1.5rem;font-weight:700;color:var(--text-primary)">Nuevo Evento</h2>
+      <nav style="font-size:.875rem;color:var(--text-muted);display:flex;gap:.5rem;align-items:center">
+        <router-link to="/admin/dashboard" style="color:inherit;text-decoration:none" class="hover:text-indigo-600">Dashboard</router-link>
+        <span>/</span>
+        <router-link to="/admin/eventos" style="color:inherit;text-decoration:none" class="hover:text-indigo-600">Eventos</router-link>
+        <span>/</span>
+        <span style="color:#4f46e5;font-weight:600">Crear</span>
+      </nav>
+    </div>
 
     <!-- Main Container matching Laravel create -->
     <div style="max-width:48rem;margin:0 auto;background:var(--card-bg,#fff);border:1px solid var(--border,#e5e7eb);border-radius:1rem;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1);position:relative">

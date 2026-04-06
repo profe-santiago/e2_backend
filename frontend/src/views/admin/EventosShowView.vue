@@ -1,11 +1,14 @@
 <template>
   <AppLayout>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
-      <h2 style="font-size:1.5rem;font-weight:700">Detalles del Evento</h2>
-      <router-link to="/admin/eventos" class="btn btn-outline btn-sm">
-        <svg style="width:1rem;height:1rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-        Volver
-      </router-link>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem">
+      <h2 style="font-size:1.5rem;font-weight:700;color:var(--text-primary)">Detalles del Evento</h2>
+      <nav style="font-size:.875rem;color:var(--text-muted);display:flex;gap:.5rem;align-items:center">
+        <router-link to="/admin/dashboard" style="color:inherit;text-decoration:none" class="hover:text-indigo-600">Dashboard</router-link>
+        <span>/</span>
+        <router-link to="/admin/eventos" style="color:inherit;text-decoration:none" class="hover:text-indigo-600">Eventos</router-link>
+        <span>/</span>
+        <span style="color:#4f46e5;font-weight:600">Detalles</span>
+      </nav>
     </div>
 
     <div v-if="loading" style="padding:2rem;text-align:center;color:var(--text-muted)">Cargando detalles...</div>

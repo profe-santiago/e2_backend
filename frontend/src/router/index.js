@@ -8,6 +8,8 @@ const routes = [
   // Admin
   { path: '/admin/dashboard', name: 'AdminDashboard', component: () => import('../views/admin/DashboardView.vue'), meta: { role: 'Admin' } },
   { path: '/admin/usuarios', name: 'Usuarios', component: () => import('../views/admin/UsuariosView.vue'), meta: { role: 'Admin' } },
+  { path: '/admin/usuarios/crear', name: 'UsuariosCreate', component: () => import('../views/admin/UsuariosCreateView.vue'), meta: { role: 'Admin' } },
+  { path: '/admin/usuarios/:id/editar', name: 'UsuariosEdit', component: () => import('../views/admin/UsuariosEditView.vue'), meta: { role: 'Admin' } },
   { path: '/admin/eventos', name: 'Eventos', component: () => import('../views/admin/EventosView.vue'), meta: { role: 'Admin' } },
   { path: '/admin/eventos/crear', name: 'EventosCreate', component: () => import('../views/admin/EventosCreateView.vue'), meta: { role: 'Admin' } },
   { path: '/admin/eventos/:id', name: 'EventosShow', component: () => import('../views/admin/EventosShowView.vue'), meta: { role: 'Admin' } },

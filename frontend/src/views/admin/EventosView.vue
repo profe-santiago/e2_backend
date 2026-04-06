@@ -1,7 +1,14 @@
 <template>
   <AppLayout>
-    <div style="margin-bottom:1.5rem">
-      <h2 style="font-size:1.5rem;font-weight:700">Calendario de Eventos</h2>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem">
+      <div>
+        <h2 style="font-size:1.5rem;font-weight:700">Calendario de Eventos</h2>
+      </div>
+      <nav style="font-size:.875rem;color:var(--text-muted);display:flex;gap:.5rem;align-items:center;margin-top:.25rem">
+        <router-link to="/admin/dashboard" style="color:inherit;text-decoration:none" class="hover:text-indigo-600">Dashboard</router-link>
+        <span>/</span>
+        <span style="color:#4f46e5;font-weight:600">Eventos</span>
+      </nav>
     </div>
 
     <div v-if="msg" class="alert alert-success">{{ msg }}</div>

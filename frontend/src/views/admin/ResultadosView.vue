@@ -1,6 +1,15 @@
 <template>
   <AppLayout>
-    <h2 style="font-size:1.5rem;font-weight:700;margin-bottom:1.5rem">Resultados y Rankings</h2>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem">
+      <div>
+        <h2 style="font-size:1.5rem;font-weight:700">Resultados y Rankings</h2>
+      </div>
+      <nav style="font-size:.875rem;color:var(--text-muted);display:flex;gap:.5rem;align-items:center;margin-top:.25rem">
+        <router-link to="/admin/dashboard" style="color:inherit;text-decoration:none" class="hover:text-indigo-600">Dashboard</router-link>
+        <span>/</span>
+        <span style="color:#4f46e5;font-weight:600">Resultados</span>
+      </nav>
+    </div>
     <div class="table-container" style="margin-bottom:1.5rem">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
         <h3 style="font-size:1.1rem;font-weight:700">🏆 Ranking de Proyectos</h3>
