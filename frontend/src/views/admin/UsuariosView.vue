@@ -87,21 +87,70 @@
       </div>
     </div>
 
-    <!-- Create/Edit Modal -->
+    <!-- Create/Edit Modal (Laravel full-page style) -->
     <div v-if="showModal" class="modal-overlay">
-      <div class="modal-content">
+      <div class="modal-content" style="max-width:48rem;width:100%">
         <div class="modal-header">
-          {{ editingUser ? 'Editar' : 'Nuevo' }} Usuario
+          <div>
+            <span style="font-size:1.125rem;font-weight:700">{{ editingUser ? 'Editar' : 'Nuevo' }} Usuario</span>
+            <nav style="font-size:.75rem;color:#6b7280;margin-top:.25rem">
+              Dashboard / Usuarios / {{ editingUser ? 'Editar' : 'Crear' }}
+            </nav>
+          </div>
           <button class="modal-close" @click="closeModal">✕</button>
         </div>
-        <div class="modal-body">
-          <div v-if="modalError" class="alert alert-danger">{{ modalError }}</div>
-          <form @submit.prevent="saveUser">
-            <div class="form-group"><label>Nombre</label><input v-model="form.nombre" class="form-control" required></div>
-            <div class="form-group"><label>Email</label><input v-model="form.email" type="email" class="form-control" required></div>
-            <div class="form-group"><label>Contraseña {{ editingUser ? '(dejar vacío para no cambiar)' : '' }}</label><input v-model="form.password" type="password" class="form-control" :required="!editingUser"></div>
-            <div class="form-group"><label>Rol</label><select v-model="form.rol_id" class="form-control" required><option value="">Seleccionar rol</option><option v-for="r in roles" :key="r.id" :value="r.id">{{ r.nombre }}</option></select></div>
-            <button type="submit" class="btn btn-indigo btn-block">{{ editingUser ? 'Actualizar' : 'Crear' }}</button>
+        <div class="modal-body" style="padding:0">
+          <div v-if="modalError" class="alert alert-danger" style="margin:1rem 1.5rem 0">{{ modalError }}</div>
+          
+          <!-- Section: Información de la Cuenta -->
+          <div style="border-bottom:1px solid var(--border);padding:1rem 1.5rem">
+            <h3 style="font-weight:600">Información de la Cuenta</h3>
+          </div>
+          
+          <form @submit.prevent="saveUser" style="padding:2rem 1.5rem">
+            <!-- Row 1: Nombre + Email -->
+            <div style="display:flex;gap:1.5rem;margin-bottom:1.25rem;flex-wrap:wrap">
+              <div class="form-group" style="flex:1;min-width:200px;margin-bottom:0">
+                <label>Nombre Completo <span style="color:#ef4444">*</span></label>
+                <input v-model="form.nombre" class="form-control" required placeholder="Ej. Juan Pérez" autocomplete="off">
+              </div>
+              <div class="form-group" style="flex:1;min-width:200px;margin-bottom:0">
+                <label>Correo Electrónico <span style="color:#ef4444">*</span></label>
+                <input v-model="form.email" type="email" class="form-control" required placeholder="usuario@correo.com" autocomplete="off">
+              </div>
+            </div>
+
+            <!-- Row 2: Rol -->
+            <div class="form-group">
+              <label>Rol Asignado <span style="color:#ef4444">*</span></label>
+              <select v-model="form.rol_id" class="form-control" required>
+                <option value="">Selecciona un rol...</option>
+                <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.nombre }}</option>
+              </select>
+            </div>
+
+            <!-- Section: Seguridad -->
+            <div style="border-bottom:1px solid var(--border);padding-bottom:1rem;margin-bottom:1.25rem;margin-top:2rem">
+              <h4 style="font-weight:500">Seguridad</h4>
+            </div>
+
+            <!-- Row 3: Contraseña + Confirmar -->
+            <div style="display:flex;gap:1.5rem;margin-bottom:1.25rem;flex-wrap:wrap">
+              <div class="form-group" style="flex:1;min-width:200px;margin-bottom:0">
+                <label>Contraseña <span v-if="!editingUser" style="color:#ef4444">*</span></label>
+                <input v-model="form.password" type="password" class="form-control" :required="!editingUser" :placeholder="editingUser ? 'Dejar vacío para no cambiar' : 'Mínimo 8 caracteres'" autocomplete="new-password">
+              </div>
+              <div class="form-group" style="flex:1;min-width:200px;margin-bottom:0">
+                <label>Confirmar Contraseña <span v-if="!editingUser" style="color:#ef4444">*</span></label>
+                <input v-model="form.password_confirmation" type="password" class="form-control" :required="!editingUser" placeholder="Repite la contraseña" autocomplete="new-password">
+              </div>
+            </div>
+
+            <!-- Buttons -->
+            <div style="display:flex;justify-content:flex-end;gap:1rem;margin-top:2rem">
+              <button type="button" class="btn btn-outline" @click="closeModal">Cancelar</button>
+              <button type="submit" class="btn btn-indigo">{{ editingUser ? 'Actualizar' : 'Crear Usuario' }}</button>
+            </div>
           </form>
         </div>
       </div>
@@ -137,7 +186,7 @@ const pagination = ref({}); const successMsg = ref('')
 const showModal = ref(false); const showDeleteModal = ref(false)
 const editingUser = ref(null); const deletingUser = ref(null)
 const modalError = ref('')
-const form = ref({ nombre:'', email:'', password:'', rol_id:'' })
+const form = ref({ nombre:'', email:'', password:'', password_confirmation:'', rol_id:'' })
 
 let debounceTimer = null
 function debounceFetch() { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => { page.value = 1; fetchUsuarios() }, 300) }
@@ -161,13 +210,17 @@ async function fetchUsuarios() {
 
 function openModal(u = null) {
   editingUser.value = u; modalError.value = ''
-  form.value = u ? { nombre: u.name, email: u.email, password: '', rol_id: u.roles[0]?.id || '' } : { nombre: '', email: '', password: '', rol_id: '' }
+  form.value = u ? { nombre: u.name, email: u.email, password: '', password_confirmation: '', rol_id: u.roles[0]?.id || '' } : { nombre: '', email: '', password: '', password_confirmation: '', rol_id: '' }
   showModal.value = true
 }
 function closeModal() { showModal.value = false; editingUser.value = null }
 
 async function saveUser() {
   modalError.value = ''
+  if (form.value.password && form.value.password !== form.value.password_confirmation) {
+    modalError.value = 'Las contraseñas no coinciden.'
+    return
+  }
   try {
     if (editingUser.value) await api.put(`/admin/usuarios/${editingUser.value.id}`, form.value)
     else await api.post('/admin/usuarios', form.value)

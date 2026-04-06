@@ -3,20 +3,23 @@
     <!-- Calendar Header -->
     <div class="calendar-header">
       <h3 class="current-label">{{ viewMode === 'month' ? (monthNames[currentDate.getMonth()] + ' ' + currentDate.getFullYear()) : currentDate.getFullYear() }}</h3>
-      <div class="calendar-controls">
-        <button class="btn-today" @click="goToday">Hoy</button>
-        <div class="divider"></div>
-        <button class="btn-nav" @click="goPrev">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-        </button>
-        <button class="btn-nav" @click="goNext">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-        </button>
-        <div class="divider"></div>
-        <select v-model="viewMode" class="view-selector">
-          <option value="month">Vista Mensual</option>
-          <option value="year">Vista del año</option>
-        </select>
+      <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+        <slot name="actions"></slot>
+        <div class="calendar-controls">
+          <button class="btn-today" @click="goToday">Hoy</button>
+          <div class="divider"></div>
+          <button class="btn-nav" @click="goPrev">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+          </button>
+          <button class="btn-nav" @click="goNext">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+          </button>
+          <div class="divider"></div>
+          <select v-model="viewMode" class="view-selector">
+            <option value="month">Vista Mensual</option>
+            <option value="year">Vista del año</option>
+          </select>
+        </div>
       </div>
     </div>
 

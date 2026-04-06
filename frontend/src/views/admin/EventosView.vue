@@ -1,13 +1,20 @@
 <template>
   <AppLayout>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+    <div style="margin-bottom:1.5rem">
       <h2 style="font-size:1.5rem;font-weight:700">Calendario de Eventos</h2>
     </div>
 
     <div v-if="msg" class="alert alert-success">{{ msg }}</div>
 
     <!-- Calendar Widget -->
-    <CalendarWidget :eventos="eventos" />
+    <CalendarWidget :eventos="eventos">
+      <template #actions>
+        <button class="btn btn-indigo" @click="showModal=true">
+          <svg style="width:1rem;height:1rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          Agregar Evento
+        </button>
+      </template>
+    </CalendarWidget>
 
     <!-- Events Table (like Laravel's "Listado de Eventos") -->
     <div class="table-container" style="margin-top:2rem">
