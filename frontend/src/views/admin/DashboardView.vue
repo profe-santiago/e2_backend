@@ -10,38 +10,39 @@
             <svg style="width:1rem;height:1rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             Generar Reporte PDF
           </a>
-          <button @click="showCustomizer = !showCustomizer" class="btn btn-white btn-sm">
-            <svg style="width:1rem;height:1rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            Personalizar
-          </button>
-        </div>
-      </div>
-
-      <!-- Customizer Panel -->
-      <div v-if="showCustomizer" class="customizer-panel">
-        <div class="customizer-header">
-          <h3>Configuración del Tablero</h3>
-          <p style="font-size:.75rem;color:var(--text-muted);margin-top:.25rem">Muestra u oculta widgets y cambia tipos de gráficos.</p>
-        </div>
-        <div class="customizer-body">
-          <h4 class="customizer-section-title">Tarjetas de Resumen</h4>
-          <div v-for="w in widgets.filter(ww => ww.key.startsWith('stats_'))" :key="w.key" class="customizer-item">
-            <label><input type="checkbox" v-model="w.is_visible"> {{ widgetLabel(w.key) }}</label>
+          <div style="position:relative" @click.stop>
+            <button @click="showCustomizer = !showCustomizer" class="btn btn-white btn-sm">
+              <svg style="width:1rem;height:1rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              Personalizar
+            </button>
+            <!-- Dropdown Panel -->
+            <div v-if="showCustomizer" class="customizer-dropdown">
+              <div class="customizer-header">
+                <h3>Configuración del Tablero</h3>
+                <p style="font-size:.75rem;color:var(--text-muted);margin-top:.25rem">Muestra u oculta widgets y cambia tipos de gráficos.</p>
+              </div>
+              <div class="customizer-body">
+                <h4 class="customizer-section-title">Tarjetas de Resumen</h4>
+                <div v-for="w in widgets.filter(ww => ww.key.startsWith('stats_'))" :key="w.key" class="customizer-item">
+                  <label><input type="checkbox" v-model="w.is_visible"> {{ widgetLabel(w.key) }}</label>
+                </div>
+                <h4 class="customizer-section-title" style="margin-top:1rem">Gráficos y Listas</h4>
+                <div v-for="w in widgets.filter(ww => !ww.key.startsWith('stats_'))" :key="w.key" class="customizer-item">
+                  <label><input type="checkbox" v-model="w.is_visible"> {{ widgetLabel(w.key) }}</label>
+                  <select v-if="w.key.startsWith('chart_')" v-model="w.settings.type" class="customizer-select">
+                    <option value="bar">Barras (Vertical)</option>
+                    <option value="horizontalBar">Barras (Horizontal)</option>
+                    <option value="doughnut">Dona</option>
+                    <option value="line">Línea</option>
+                    <option value="pie">Pastel</option>
+                  </select>
+                </div>
+              </div>
+              <div class="customizer-footer">
+                <button @click="savePreferences" class="btn btn-indigo" style="width:100%">Aplicar Cambios</button>
+              </div>
+            </div>
           </div>
-          <h4 class="customizer-section-title" style="margin-top:1rem">Gráficos y Listas</h4>
-          <div v-for="w in widgets.filter(ww => !ww.key.startsWith('stats_'))" :key="w.key" class="customizer-item">
-            <label><input type="checkbox" v-model="w.is_visible"> {{ widgetLabel(w.key) }}</label>
-            <select v-if="w.key.startsWith('chart_')" v-model="w.settings.type" class="customizer-select">
-              <option value="bar">Barras (Vertical)</option>
-              <option value="horizontalBar">Barras (Horizontal)</option>
-              <option value="doughnut">Dona</option>
-              <option value="line">Línea</option>
-              <option value="pie">Pastel</option>
-            </select>
-          </div>
-        </div>
-        <div class="customizer-footer">
-          <button @click="savePreferences" class="btn btn-indigo" style="width:100%">Aplicar Cambios</button>
         </div>
       </div>
 
@@ -138,7 +139,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { Bar as BarChart, Doughnut as DoughnutChart, Line as LineChart, Pie as PieChart } from 'vue-chartjs'
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js'
 import AppLayout from '../../components/layout/AppLayout.vue'
@@ -152,6 +153,7 @@ const loading = ref(true)
 const data = ref({})
 const widgets = ref([])
 const showCustomizer = ref(false)
+function closeCustomizer() { showCustomizer.value = false }
 
 const palette = ['#4f46e5','#ec4899','#10b981','#f59e0b','#3b82f6','#8b5cf6']
 
@@ -268,6 +270,7 @@ async function savePreferences() {
 }
 
 onMounted(async () => {
+  document.addEventListener('click', closeCustomizer)
   try {
     const res = await api.get('/admin/dashboard')
     data.value = res.data.data
@@ -275,10 +278,17 @@ onMounted(async () => {
   } catch (e) { console.error(e) }
   finally { loading.value = false }
 })
+onUnmounted(() => document.removeEventListener('click', closeCustomizer))
 </script>
 
 <style scoped>
-.customizer-panel { background: var(--card-bg, #fff); border: 1px solid var(--border, #e5e7eb); border-radius: .75rem; margin-bottom: 1.5rem; overflow: hidden; box-shadow: 0 4px 25px rgba(0,0,0,.08); }
+.customizer-dropdown {
+  position: absolute; right: 0; top: 100%; margin-top: .5rem;
+  width: 20rem; /* w-80 */
+  background: var(--card-bg, #fff); border: 1px solid var(--border, #e5e7eb);
+  border-radius: .75rem; overflow: hidden; z-index: 50;
+  box-shadow: 0 10px 40px rgba(0,0,0,.15);
+}
 .customizer-header { padding: 1rem 1.25rem; background: var(--card-muted, #f9fafb); border-bottom: 1px solid var(--border, #e5e7eb); }
 .customizer-header h3 { font-size: .875rem; font-weight: 700; color: var(--text-primary); }
 .customizer-body { padding: 1rem 1.25rem; max-height: 400px; overflow-y: auto; }
