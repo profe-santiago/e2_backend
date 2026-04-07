@@ -238,158 +238,69 @@ async function main() {
   console.log(`✅ ${equipos.length} equipos creados`)
 
   // ─── PROYECTOS ───
-  const proyectos = await Promise.all([
-    prisma.proyectos.create({
-      data: {
-        equipo_id: equipos[0].id,
-        evento_id: eventos[0].id,
-        nombre: 'EcoTrack - Monitor Ambiental IoT',
-        descripcion: 'Sistema de monitoreo ambiental en tiempo real usando sensores IoT. Mide temperatura, humedad, calidad del aire y niveles de ruido en campus universitarios.',
-        repositorio_url: 'https://github.com/codebreakers/ecotrack',
-        updated_at: new Date()
-      }
-    }),
-    prisma.proyectos.create({
-      data: {
-        equipo_id: equipos[1].id,
-        evento_id: eventos[0].id,
-        nombre: 'MediConnect - Telemedicina Rural',
-        descripcion: 'Plataforma de telemedicina enfocada en comunidades rurales con conectividad limitada. Incluye diagnóstico asistido por IA y expedientes digitales.',
-        repositorio_url: 'https://github.com/byteforce/mediconnect',
-        updated_at: new Date()
-      }
-    }),
-    prisma.proyectos.create({
-      data: {
-        equipo_id: equipos[2].id,
-        evento_id: eventos[0].id,
-        nombre: 'SmartPark - Estacionamiento Inteligente',
-        descripcion: 'App móvil y sistema de sensores para localizar espacios de estacionamiento disponibles en tiempo real dentro del campus.',
-        repositorio_url: 'https://github.com/nexgendevs/smartpark',
-        updated_at: new Date()
-      }
-    }),
-    prisma.proyectos.create({
-      data: {
-        equipo_id: equipos[3].id,
-        evento_id: eventos[0].id,
-        nombre: 'LearnPath - Plataforma Educativa Adaptativa',
-        descripcion: 'Sistema de aprendizaje adaptativo que personaliza el contenido educativo según el estilo de aprendizaje y progreso del estudiante usando ML.',
-        repositorio_url: 'https://github.com/techwizards/learnpath',
-        updated_at: new Date()
-      }
-    }),
-    prisma.proyectos.create({
-      data: {
-        equipo_id: equipos[4].id,
-        evento_id: eventos[0].id,
-        nombre: 'AgroVision - Análisis de Cultivos por Drones',
-        descripcion: 'Solución de agricultura de precisión que utiliza drones y visión computacional para analizar el estado de salud de los cultivos.',
-        repositorio_url: 'https://github.com/innovatech/agrovision',
-        updated_at: new Date()
-      }
-    }),
-    prisma.proyectos.create({
-      data: {
-        equipo_id: equipos[0].id,
-        evento_id: eventos[0].id,
-        nombre: 'TaskFlow - Gestor de Tareas con IA',
-        descripcion: 'Herramienta de gestión de proyectos que usa inteligencia artificial para priorizar tareas y predecir tiempos de entrega.',
-        repositorio_url: 'https://github.com/codebreakers/taskflow',
-        updated_at: new Date()
-      }
-    }),
-    prisma.proyectos.create({
-      data: {
-        equipo_id: equipos[1].id,
-        evento_id: eventos[2].id,
-        nombre: 'WaterGuard - Monitoreo Hídrico',
-        descripcion: 'Sistema de monitoreo de calidad del agua en tiempo real para comunidades con problemas de contaminación hídrica.',
-        repositorio_url: 'https://github.com/byteforce/waterguard',
-        updated_at: new Date()
-      }
-    }),
-    prisma.proyectos.create({
-      data: {
-        equipo_id: equipos[2].id,
-        evento_id: eventos[4].id,
-        nombre: 'CyberShield - Seguridad en Redes',
-        descripcion: 'Herramienta de análisis de vulnerabilidades y detección de intrusiones para redes empresariales pequeñas y medianas.',
-        repositorio_url: 'https://github.com/nexgendevs/cybershield',
-        updated_at: new Date()
-      }
-    }),
-    prisma.proyectos.create({
-      data: {
-        equipo_id: equipos[5].id, // Alpha Dynamics
-        evento_id: eventos[5].id,
-        nombre: 'AlphaTrader - Algoritmos de Bolsa',
-        descripcion: 'Plataforma de simulación de trading automático usando estrategias de machine learning.',
-        repositorio_url: 'https://github.com/alphadynamics/alphatrader',
-        updated_at: new Date()
-      }
-    }),
-    prisma.proyectos.create({
-      data: {
-        equipo_id: equipos[6].id, // Cyber Punks
-        evento_id: eventos[6].id,
-        nombre: 'Neon City - Metaverso Independiente',
-        descripcion: 'Videojuego multijugador masivo en un entorno cyberpunk con economía propia.',
-        repositorio_url: 'https://github.com/cyberpunks/neoncity',
-        updated_at: new Date()
-      }
-    }),
-    prisma.proyectos.create({
-      data: {
-        equipo_id: equipos[7].id, // Quantum Coders
-        evento_id: eventos[7].id,
-        nombre: 'Q-Sim - Emulador Cuántico',
-        descripcion: 'Emulador de computadora cuántica de código abierto para fines educativos.',
-        repositorio_url: 'https://github.com/quantumcoders/qsim',
-        updated_at: new Date()
-      }
-    }),
-    prisma.proyectos.create({
-      data: {
-        equipo_id: equipos[8].id, // Data Miners
-        evento_id: eventos[8].id,
-        nombre: 'GeoPredict - Predicción de Sismos',
-        descripcion: 'Análisis de datos sísmicos históricos para detectar patrones y emitir pre-alertas de actividad volcánica.',
-        repositorio_url: 'https://github.com/dataminers/geopredict',
-        updated_at: new Date()
-      }
-    }),
-  ])
+  // Generaremos 4 proyectos programáticamente para cada evento usando diferentes equipos
+  const proyectosData = []
+  
+  const nombresBase = [
+    'EcoTrack IoT', 'MediConnect AI', 'SmartPark', 'LearnPath ML', 'AgroVision', 'TaskFlow',
+    'WaterGuard', 'CyberShield', 'AlphaTrader', 'Neon City VR', 'Q-Sim Quant', 'GeoPredict',
+    'BioAnalyzer', 'AutoDrive', 'FinTech Hub', 'BlockChain ID'
+  ]
 
-  console.log(`✅ ${proyectos.length} proyectos creados`)
+  for (let eIdx = 0; eIdx < eventos.length; eIdx++) {
+    const evento = eventos[eIdx]
+    
+    // Elegimos 4 equipos distintos para este evento rotando el índice
+    for (let pIdx = 0; pIdx < 4; pIdx++) {
+      const equipoIdx = (eIdx * 4 + pIdx) % equipos.length
+      const equipo = equipos[equipoIdx]
+      const nombreIndex = (eIdx * 4 + pIdx) % nombresBase.length
+      
+      proyectosData.push({
+        equipo_id: equipo.id,
+        evento_id: evento.id,
+        nombre: nombresBase[nombreIndex] + ` - Edición ${evento.nombre.substring(0, 5)}`,
+        descripcion: `Descripción generada automáticamente para evaluar el desempeño del equipo dentro del evento seleccionado. Innovación, tecnología y diseño aplicados en ${nombresBase[nombreIndex]}.`,
+        repositorio_url: `https://github.com/equipos/${nombresBase[nombreIndex].toLowerCase().replace(/\s/g, '-')}`,
+        updated_at: new Date()
+      })
+    }
+  }
 
-  // ─── CALIFICACIONES ───
+  // Insertar todos y luego leerlos de vuelta para mantener la variable `proyectos`
+  await prisma.proyectos.createMany({ data: proyectosData })
+  const proyectos = await prisma.proyectos.findMany()
+
+  console.log(`✅ ${proyectos.length} proyectos creados programáticamente (4 por evento)`)
+
+  // ─── CRITERIOS y CALIFICACIONES PARA TODOS LOS EVENTOS Y PROYECTOS ───
   let juez = await prisma.users.findFirst()
 
   if (juez) {
-    // Check si hay criterios para el evento 0
-    let criteriosEvento0 = await prisma.evaluacion_criterios.findMany({ where: { evento_id: eventos[0].id } })
-    if (criteriosEvento0.length === 0) {
-      await prisma.evaluacion_criterios.createMany({
-        data: [
-          { evento_id: eventos[0].id, nombre: 'Innovación', ponderacion: 30 },
-          { evento_id: eventos[0].id, nombre: 'Implementación', ponderacion: 40 },
-          { evento_id: eventos[0].id, nombre: 'Presentación', ponderacion: 30 },
-        ]
-      })
-      criteriosEvento0 = await prisma.evaluacion_criterios.findMany({ where: { evento_id: eventos[0].id } })
+    // 1. Asegurar que todos los eventos tengan criterios de evaluación
+    for (const evento of eventos) {
+      let criterios = await prisma.evaluacion_criterios.findMany({ where: { evento_id: evento.id } })
+      if (criterios.length === 0) {
+        await prisma.evaluacion_criterios.createMany({
+          data: [
+            { evento_id: evento.id, nombre: 'Innovación', ponderacion: 30 },
+            { evento_id: evento.id, nombre: 'Implementación', ponderacion: 40 },
+            { evento_id: evento.id, nombre: 'Presentación', ponderacion: 30 },
+          ]
+        })
+      }
     }
 
-    const proyectosEvento0 = proyectos.filter(p => p.evento_id === eventos[0].id)
+    // 2. Calificar todos los proyectos
+    const puntuaciones = [98, 92, 85, 78, 65, 88, 75, 96, 89, 70, 82, 90]
     
-    // Puntuaciones base para cada uno (para asegurar diferencias y ranking claro)
-    const puntuaciones = [98, 92, 85, 78, 65]
-    
-    for (let i = 0; i < proyectosEvento0.length; i++) {
-      const proyecto = proyectosEvento0[i]
+    for (let i = 0; i < proyectos.length; i++) {
+      const proyecto = proyectos[i]
       const baseScore = puntuaciones[i % puntuaciones.length]
       
-      for (const criterio of criteriosEvento0) {
+      const criteriosEvento = await prisma.evaluacion_criterios.findMany({ where: { evento_id: proyecto.evento_id } })
+      
+      for (const criterio of criteriosEvento) {
         const score = Math.min(100, Math.max(0, baseScore + (Math.random() * 6 - 3)))
         await prisma.evaluaciones.create({
           data: {
@@ -397,13 +308,13 @@ async function main() {
             juez_id: juez.id,
             criterio_id: criterio.id,
             puntuacion: parseFloat(score.toFixed(2)),
-            comentario: 'Proyecto calificado desde semilla.',
+            comentario: 'Proyecto calificado general.',
             created_at: new Date()
           }
         })
       }
     }
-    console.log(`✅ Evaluaciones creadas para los ${proyectosEvento0.length} proyectos del evento 0`)
+    console.log(`✅ Evaluaciones creadas para los ${proyectos.length} proyectos de la BD`)
   }
 
   console.log('\n🎉 Seed completado exitosamente!')
