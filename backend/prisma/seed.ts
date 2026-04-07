@@ -262,7 +262,7 @@ async function main() {
     prisma.proyectos.create({
       data: {
         equipo_id: equipos[2].id,
-        evento_id: eventos[1].id,
+        evento_id: eventos[0].id,
         nombre: 'SmartPark - Estacionamiento Inteligente',
         descripcion: 'App móvil y sistema de sensores para localizar espacios de estacionamiento disponibles en tiempo real dentro del campus.',
         repositorio_url: 'https://github.com/nexgendevs/smartpark',
@@ -272,7 +272,7 @@ async function main() {
     prisma.proyectos.create({
       data: {
         equipo_id: equipos[3].id,
-        evento_id: eventos[1].id,
+        evento_id: eventos[0].id,
         nombre: 'LearnPath - Plataforma Educativa Adaptativa',
         descripcion: 'Sistema de aprendizaje adaptativo que personaliza el contenido educativo según el estilo de aprendizaje y progreso del estudiante usando ML.',
         repositorio_url: 'https://github.com/techwizards/learnpath',
@@ -282,7 +282,7 @@ async function main() {
     prisma.proyectos.create({
       data: {
         equipo_id: equipos[4].id,
-        evento_id: eventos[2].id,
+        evento_id: eventos[0].id,
         nombre: 'AgroVision - Análisis de Cultivos por Drones',
         descripcion: 'Solución de agricultura de precisión que utiliza drones y visión computacional para analizar el estado de salud de los cultivos.',
         repositorio_url: 'https://github.com/innovatech/agrovision',
@@ -292,7 +292,7 @@ async function main() {
     prisma.proyectos.create({
       data: {
         equipo_id: equipos[0].id,
-        evento_id: eventos[4].id,
+        evento_id: eventos[0].id,
         nombre: 'TaskFlow - Gestor de Tareas con IA',
         descripcion: 'Herramienta de gestión de proyectos que usa inteligencia artificial para priorizar tareas y predecir tiempos de entrega.',
         repositorio_url: 'https://github.com/codebreakers/taskflow',
@@ -362,6 +362,49 @@ async function main() {
   ])
 
   console.log(`✅ ${proyectos.length} proyectos creados`)
+
+  // ─── CALIFICACIONES ───
+  let juez = await prisma.users.findFirst()
+
+  if (juez) {
+    // Check si hay criterios para el evento 0
+    let criteriosEvento0 = await prisma.evaluacion_criterios.findMany({ where: { evento_id: eventos[0].id } })
+    if (criteriosEvento0.length === 0) {
+      await prisma.evaluacion_criterios.createMany({
+        data: [
+          { evento_id: eventos[0].id, nombre: 'Innovación', ponderacion: 30 },
+          { evento_id: eventos[0].id, nombre: 'Implementación', ponderacion: 40 },
+          { evento_id: eventos[0].id, nombre: 'Presentación', ponderacion: 30 },
+        ]
+      })
+      criteriosEvento0 = await prisma.evaluacion_criterios.findMany({ where: { evento_id: eventos[0].id } })
+    }
+
+    const proyectosEvento0 = proyectos.filter(p => p.evento_id === eventos[0].id)
+    
+    // Puntuaciones base para cada uno (para asegurar diferencias y ranking claro)
+    const puntuaciones = [98, 92, 85, 78, 65]
+    
+    for (let i = 0; i < proyectosEvento0.length; i++) {
+      const proyecto = proyectosEvento0[i]
+      const baseScore = puntuaciones[i % puntuaciones.length]
+      
+      for (const criterio of criteriosEvento0) {
+        const score = Math.min(100, Math.max(0, baseScore + (Math.random() * 6 - 3)))
+        await prisma.evaluaciones.create({
+          data: {
+            proyecto_id: proyecto.id,
+            juez_id: juez.id,
+            criterio_id: criterio.id,
+            puntuacion: parseFloat(score.toFixed(2)),
+            comentario: 'Proyecto calificado desde semilla.',
+            created_at: new Date()
+          }
+        })
+      }
+    }
+    console.log(`✅ Evaluaciones creadas para los ${proyectosEvento0.length} proyectos del evento 0`)
+  }
 
   console.log('\n🎉 Seed completado exitosamente!')
   console.log(`   📅 ${eventos.length} eventos`)
