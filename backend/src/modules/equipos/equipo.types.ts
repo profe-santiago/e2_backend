@@ -13,4 +13,6 @@ export interface AddMiembroDto {
 export interface EquipoQueryOptions {
   page?: number;
   limit?: number;
+  search?: string;
+  evento_id?: number;
 }

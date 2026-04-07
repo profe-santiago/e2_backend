@@ -39,9 +39,50 @@ const validate = (schema: any) => (req: Request, res: Response, next: NextFuncti
  */
 router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
-    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
-    const result = await equipoService.getAllEquipos({ page, limit });
+    let page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
+    let limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
+    if (isNaN(page)) page = 1;
+    if (isNaN(limit)) limit = 10;
+    const search = req.query.search ? (req.query.search as string) : undefined;
+    const evento_id = req.query.evento_id && !isNaN(parseInt(req.query.evento_id as string, 10)) ? parseInt(req.query.evento_id as string, 10) : undefined;
+    
+    const result = await equipoService.getAllEquipos({ page, limit, search, evento_id });
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @openapi
+ * /api/admin/equipos:
+ *   post:
+ *     summary: Crear un nuevo equipo
+ *     tags: [Equipos]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nombre:
+ *                 type: string
+ *               max_programadores:
+ *                 type: integer
+ *               max_disenadores:
+ *                 type: integer
+ *               max_testers:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Equipo creado exitosamente
+ */
+router.post('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await equipoService.createEquipo(req.body);
     res.json(result);
   } catch (error) {
     next(error);

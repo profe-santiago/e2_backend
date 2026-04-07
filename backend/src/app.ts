@@ -7,6 +7,10 @@ import { config } from './config';
 
 const app: Application = express();
 
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
+
 const swaggerOptions = {
   definition: {
     openapi: '3.0.0',

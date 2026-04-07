@@ -58,6 +58,11 @@ export class EquipoService {
     };
   }
 
+  async createEquipo(data: any) {
+    const eq = await equipoRepository.create(data);
+    return { success: true, data: { ...eq, id: Number(eq.id), equipo: { id: Number(eq.id) } }, message: 'Equipo creado.' };
+  }
+
   async getEquipoById(id: number) {
     const equipo = await equipoRepository.findById(id);
     if (!equipo) {

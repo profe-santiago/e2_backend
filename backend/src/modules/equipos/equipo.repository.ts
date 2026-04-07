@@ -3,12 +3,21 @@ import { UpdateEquipoDto, AddMiembroDto, EquipoQueryOptions } from './equipo.typ
 
 export class EquipoRepository {
   async findAllPaginated(options: EquipoQueryOptions) {
-    const { page = 1, limit = 10 } = options;
+    const { page = 1, limit = 10, search, evento_id } = options;
     const offset = (page - 1) * limit;
 
+    const where: any = {};
+    if (search) {
+      where.nombre = { contains: search };
+    }
+    if (evento_id) {
+      where.proyectos = { some: { evento_id: BigInt(evento_id) } };
+    }
+
     const [count, rows] = await Promise.all([
-      prisma.equipos.count(),
+      prisma.equipos.count({ where }),
       prisma.equipos.findMany({
+        where,
         include: {
           proyectos: {
             include: { eventos: true }
@@ -28,6 +37,18 @@ export class EquipoRepository {
     ]);
 
     return { count, rows };
+  }
+
+  async create(data: any) {
+    return prisma.equipos.create({
+      data: {
+        nombre: data.nombre,
+        max_programadores: data.max_programadores || 2,
+        max_disenadores: data.max_disenadores || 1,
+        max_testers: data.max_testers || 1,
+        updated_at: new Date()
+      }
+    });
   }
 
   async findById(id: number) {
