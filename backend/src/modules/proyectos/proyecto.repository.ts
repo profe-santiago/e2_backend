@@ -3,12 +3,21 @@ import { CreateProyectoDto, UpdateProyectoDto, ProyectoQueryOptions } from './pr
 
 export class ProyectoRepository {
   async findAllPaginated(options: ProyectoQueryOptions) {
-    const { page = 1, limit = 10 } = options;
+    const { page = 1, limit = 10, search, evento_id } = options;
     const offset = (page - 1) * limit;
 
+    const where: any = {};
+    if (search) {
+      where.nombre = { contains: search };
+    }
+    if (evento_id) {
+      where.evento_id = BigInt(evento_id);
+    }
+
     const [count, rows] = await Promise.all([
-      prisma.proyectos.count(),
+      prisma.proyectos.count({ where }),
       prisma.proyectos.findMany({
+        where,
         include: {
           equipos: true,
           eventos: true
@@ -26,9 +35,13 @@ export class ProyectoRepository {
     return prisma.proyectos.findUnique({
       where: { id: BigInt(id) },
       include: {
-        equipos: true,
+        equipos: {
+          include: { equipo_miembros: true }
+        },
         eventos: true,
-        evaluaciones: true
+        evaluaciones: {
+          include: { evaluacion_criterios: true }
+        }
       }
     });
   }

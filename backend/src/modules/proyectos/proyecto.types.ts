@@ -15,4 +15,6 @@ export interface UpdateProyectoDto {
 export interface ProyectoQueryOptions {
   page?: number;
   limit?: number;
+  search?: string;
+  evento_id?: number;
 }

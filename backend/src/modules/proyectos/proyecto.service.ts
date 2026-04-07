@@ -61,7 +61,13 @@ export class ProyectoService {
         proyecto_id: Number(c.proyecto_id),
         juez_user_id: Number(c.juez_id),
         criterio_id: Number(c.criterio_id),
-        puntuacion: Number(c.puntuacion)
+        puntuacion: Number(c.puntuacion),
+        criterio: c.evaluacion_criterios ? {
+            ...c.evaluacion_criterios,
+            id: Number(c.evaluacion_criterios.id),
+            evento_id: Number(c.evaluacion_criterios.evento_id),
+            ponderacion: Number(c.evaluacion_criterios.ponderacion)
+        } : null
       })),
       // Keep calificaciones alias for frontend compatibility
       calificaciones: (proyecto as any).evaluaciones.map((c: any) => ({
@@ -70,10 +76,17 @@ export class ProyectoService {
         proyecto_id: Number(c.proyecto_id),
         juez_user_id: Number(c.juez_id),
         criterio_id: Number(c.criterio_id),
-        puntuacion: Number(c.puntuacion)
+        puntuacion: Number(c.puntuacion),
+        criterio: c.evaluacion_criterios ? {
+            ...c.evaluacion_criterios,
+            id: Number(c.evaluacion_criterios.id),
+            evento_id: Number(c.evaluacion_criterios.evento_id),
+            ponderacion: Number(c.evaluacion_criterios.ponderacion)
+        } : null
       }))
     };
 
+    // Calculate despuntaje here or let frontend do it. Frontend has the data now.
     return { success: true, data: formatProyecto };
   }
 
