@@ -83,7 +83,8 @@ router.get('/report', authMiddleware, async (req: AuthRequest, res: Response, ne
   try {
     const userId = Number(req.user.id);
     const data = await adminService.getDashboardData(userId);
-    PdfService.generarReporteDashboard(res, data.data);
+    const userName = (req.user as any).name || (req.user as any).email || 'Admin';
+    PdfService.generarReporteDashboard(res, data.data, userName);
   } catch (error) {
     next(error);
   }

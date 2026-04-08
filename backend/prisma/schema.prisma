@@ -35,6 +35,15 @@ model eventos {
   proyectos            proyectos[]
 }
 
+model carreras {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  nombre     String    @db.VarChar(255)
+  clave      String?   @db.VarChar(255)
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+}
+
 model proyectos {
   id               BigInt             @id @default(autoincrement()) @db.UnsignedBigInt
   equipo_id        BigInt             @db.UnsignedBigInt

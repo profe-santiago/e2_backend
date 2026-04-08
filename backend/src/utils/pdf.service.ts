@@ -75,53 +75,164 @@ export class PdfService {
     doc.end();
   }
 
-  static generarReporteDashboard(res: Response, data: any) {
+  static generarReporteDashboard(res: Response, data: any, userName: string = 'Admin') {
     const doc = new PDFDocument({ size: 'A4', layout: 'portrait', margins: { top: 40, bottom: 40, left: 50, right: 50 } });
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="Reporte_Dashboard_${new Date().toISOString().split('T')[0]}.pdf"`);
     doc.pipe(res);
 
-    doc.fontSize(20).fillColor('#1a237e').font('Helvetica-Bold').text('Reporte del Dashboard', { align: 'center' });
-    doc.moveDown(0.5);
-    doc.fontSize(10).fillColor('#666').font('Helvetica').text(`Generado el: ${new Date().toLocaleDateString('es-MX')}`, { align: 'center' });
+    const pageWidth = doc.page.width - 100;
 
-    // ─── Métricas ───
-    doc.moveDown(2);
-    doc.fontSize(14).fillColor('#333').font('Helvetica-Bold').text('Métricas Generales');
-    doc.moveDown(0.5);
-    doc.fontSize(11).font('Helvetica').fillColor('#444');
-    doc.text(`• Total de Jueces: ${data.total_jueces || 0}`);
-    doc.text(`• Total de Participantes: ${data.total_participantes || 0}`);
-    doc.text(`• Total de Equipos: ${data.total_equipos || 0}`);
-    doc.text(`• Total de Proyectos: ${data.total_proyectos || 0}`);
-    doc.text(`• Proyectos Evaluados: ${data.proyectosEvaluados || 0}`);
-    doc.text(`• Proyectos Pendientes: ${data.proyectosPendientes || 0}`);
-
-    // ─── Participantes por Carrera ───
+    // Header
+    doc.fontSize(24).fillColor('#4f46e5').font('Helvetica-Bold');
+    doc.text('REPORTE GENERAL DE ACTIVIDAD', { align: 'center' });
+    doc.moveDown(0.2);
+    
+    const tzOffset = -6 * 60; // Assuming -06:00
+    const now = new Date(new Date().getTime() + tzOffset * 60 * 1000);
+    const dateStr = now.toISOString().replace('T', ' ').substring(0, 16);
+    
+    doc.fontSize(12).fillColor('#666').font('Helvetica');
+    doc.text(`Generado el: ${dateStr} | Usuario: ${userName}`, { align: 'center' });
+    
+    // Header border
+    doc.moveDown(1);
+    doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).lineWidth(2).strokeColor('#4f46e5').stroke();
     doc.moveDown(1.5);
-    doc.fontSize(14).fillColor('#333').font('Helvetica-Bold').text('Participantes por Carrera');
+
+    // Resumen General
+    doc.fontSize(16).fillColor('#1f2937').font('Helvetica-Bold').text('Resumen General');
+    doc.moveDown(0.2);
+    doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).lineWidth(1).strokeColor('#e5e7eb').stroke();
     doc.moveDown(0.5);
-    doc.fontSize(11).font('Helvetica').fillColor('#444');
-    if (data.participantesPorCarrera) {
+
+    // 4 Boxes
+    const boxWidth = pageWidth / 4;
+    const startY = doc.y;
+    const boxHeight = 55;
+
+    const stats = [
+      { label: 'JUECES REGISTRADOS', value: data.total_jueces || 0 },
+      { label: 'PARTICIPANTES', value: data.total_participantes || 0 },
+      { label: 'EQUIPOS', value: data.total_equipos || 0 },
+      { label: 'PROYECTOS', value: data.total_proyectos || 0 }
+    ];
+
+    stats.forEach((stat, i) => {
+      const x = 50 + (i * boxWidth);
+      doc.rect(x, startY, boxWidth, boxHeight).fillAndStroke('#f9fafb', '#e5e7eb');
+      doc.fillColor('#111827').font('Helvetica-Bold').fontSize(22).text(stat.value.toString(), x, startY + 12, { width: boxWidth, align: 'center' });
+      doc.fillColor('#6b7280').font('Helvetica').fontSize(8).text(stat.label, x, startY + 38, { width: boxWidth, align: 'center' });
+    });
+
+    doc.y = startY + boxHeight + 30;
+
+    // Estado de Proyectos
+    doc.fontSize(16).fillColor('#1f2937').font('Helvetica-Bold').text('Estado de Proyectos');
+    doc.moveDown(0.2);
+    doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).lineWidth(1).strokeColor('#e5e7eb').stroke();
+    doc.moveDown(0.5);
+
+    // Table
+    const colStatus = 50, colCant = 150, colPorc = 250, colVis = 350;
+    const drawRow = (y: number, isHeader: boolean, status: string, cant: string, porc: string, fillPercent?: number, color?: string) => {
+      doc.rect(50, y, pageWidth, 25).fillAndStroke(isHeader ? '#f3f4f6' : '#ffffff', '#e5e7eb');
+      doc.fillColor(isHeader ? '#111827' : '#333').font(isHeader ? 'Helvetica-Bold' : 'Helvetica').fontSize(10);
+      doc.text(status, colStatus + 10, y + 8);
+      doc.text(cant, colCant + 10, y + 8);
+      doc.text(porc, colPorc + 10, y + 8);
+      if (!isHeader && fillPercent !== undefined) {
+        doc.rect(colVis + 10, y + 8, 100, 10).fill('#e5e7eb'); // track
+        if (fillPercent > 0) {
+          doc.rect(colVis + 10, y + 8, fillPercent, 10).fill(color || '#4f46e5'); // fill
+        }
+      } else if (isHeader) {
+        doc.text('Visualización', colVis + 10, y + 8);
+      }
+    };
+
+    let tblY = doc.y;
+    drawRow(tblY, true, 'Estado', 'Cantidad', 'Porcentaje');
+    tblY += 25;
+    
+    const evs = data.proyectosEvaluados || 0;
+    const pends = data.proyectosPendientes || 0;
+    const totalP = evs + pends;
+    
+    const evsPct = totalP > 0 ? (evs / totalP) * 100 : 0;
+    const pendsPct = totalP > 0 ? (pends / totalP) * 100 : 0;
+
+    drawRow(tblY, false, 'Evaluados', evs.toString(), `${evsPct.toFixed(1)}%`, evsPct, '#4f46e5');
+    tblY += 25;
+    drawRow(tblY, false, 'Pendientes', pends.toString(), `${pendsPct.toFixed(1)}%`, pendsPct, '#9ca3af');
+    
+    doc.y = tblY + 30;
+
+    // Participación por Carrera
+    doc.fontSize(16).fillColor('#1f2937').font('Helvetica-Bold').text('Participación por Carrera');
+    doc.moveDown(0.2);
+    doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).lineWidth(1).strokeColor('#e5e7eb').stroke();
+    doc.moveDown(0.5);
+
+    let cy = doc.y;
+    doc.rect(50, cy, pageWidth, 25).fillAndStroke('#f3f4f6', '#e5e7eb');
+    doc.fillColor('#111827').font('Helvetica-Bold').fontSize(10);
+    doc.text('Carrera', 60, cy + 8);
+    doc.text('Participantes', 300, cy + 8);
+    cy += 25;
+
+    if (data.participantesPorCarrera && Object.keys(data.participantesPorCarrera).length > 0) {
       Object.entries(data.participantesPorCarrera).forEach(([carrera, total]) => {
-        doc.text(`• ${carrera}: ${total} participantes`);
-      });
-    }
-
-    // ─── Eventos activos ───
-    doc.moveDown(1.5);
-    doc.fontSize(14).fillColor('#333').font('Helvetica-Bold').text('Eventos Activos');
-    doc.moveDown(0.5);
-    doc.fontSize(11).font('Helvetica').fillColor('#444');
-    if (data.eventos_activos && data.eventos_activos.length > 0) {
-      data.eventos_activos.forEach((evento: any) => {
-        const fi = new Date(evento.fecha_inicio).toLocaleDateString('es-MX');
-        const ff = new Date(evento.fecha_fin).toLocaleDateString('es-MX');
-        doc.text(`• ${evento.nombre} (${fi} - ${ff})`);
+        if (cy > doc.page.height - 100) { doc.addPage(); cy = 50; }
+        doc.rect(50, cy, pageWidth, 25).fillAndStroke('#ffffff', '#e5e7eb');
+        doc.fillColor('#333').font('Helvetica').fontSize(10);
+        doc.text(carrera, 60, cy + 8, { width: 230, ellipsis: true });
+        doc.text(total?.toString() || '0', 300, cy + 8);
+        cy += 25;
       });
     } else {
-      doc.text('No hay eventos activos actualmente.');
+      doc.rect(50, cy, pageWidth, 25).fillAndStroke('#ffffff', '#e5e7eb');
+      doc.fillColor('#666').font('Helvetica-Oblique').fontSize(10);
+      doc.text('No hay datos disponibles.', 60, cy + 8);
+      cy += 25;
+    }
+    
+    doc.y = cy + 30;
+
+    // Próximos Eventos
+    if (doc.y > doc.page.height - 150) { doc.addPage(); doc.y = 50; }
+    doc.fontSize(16).fillColor('#1f2937').font('Helvetica-Bold').text('Próximos Eventos');
+    doc.moveDown(0.2);
+    doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).lineWidth(1).strokeColor('#e5e7eb').stroke();
+    doc.moveDown(0.5);
+
+    let cye = doc.y;
+    if (data.eventos_activos && data.eventos_activos.length > 0) {
+      doc.rect(50, cye, pageWidth, 25).fillAndStroke('#f3f4f6', '#e5e7eb');
+      doc.fillColor('#111827').font('Helvetica-Bold').fontSize(10);
+      doc.text('Evento', 60, cye + 8);
+      doc.text('Fecha Inicio', 200, cye + 8);
+      doc.text('Descripción', 300, cye + 8);
+      cye += 25;
+
+      data.eventos_activos.forEach((evento: any) => {
+        if (cye > doc.page.height - 50) { doc.addPage(); cye = 50; }
+        
+        const descText = evento.descripcion || 'Sin descripción';
+        doc.fontSize(9);
+        const descHeight = doc.heightOfString(descText, { width: pageWidth - 260 });
+        const rowHeight = Math.max(25, descHeight + 10);
+        
+        doc.rect(50, cye, pageWidth, rowHeight).fillAndStroke('#ffffff', '#e5e7eb');
+        doc.fillColor('#333').font('Helvetica').fontSize(10);
+        doc.text(evento.nombre, 60, cye + 8, { width: 130, height: 15, ellipsis: true });
+        doc.text(new Date(evento.fecha_inicio).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' }), 200, cye + 8);
+        doc.fontSize(9).fillColor('#666').text(descText, 300, cye + 8, { width: pageWidth - 260 });
+        cye += rowHeight;
+      });
+    } else {
+      doc.fillColor('#666').font('Helvetica-Oblique').fontSize(10).text('No hay eventos programados próximamente.');
     }
 
     doc.end();
