@@ -180,6 +180,23 @@
               >
                 {{ selectedCandidate.name }}
               </p>
+              <div v-if="selectedCandidate.esta_ocupado" style="margin-bottom: 0.75rem">
+                <span
+                  style="
+                    font-size: 10px;
+                    font-weight: 700;
+                    padding: 0.125rem 0.5rem;
+                    background: #fee2e2;
+                    color: #b91c1c;
+                    border-radius: 0.25rem;
+                    border: 1px solid #fecaca;
+                  "
+                  >OCUPADO</span
+                >
+                <p style="font-size: 11px; color: #ef4444; margin-top: 0.25rem; font-weight: 600">
+                  Este alumno ya está asignado a otro equipo para este evento.
+                </p>
+              </div>
 
               <form @submit.prevent="addMember">
                 <div style="margin-bottom: 0.75rem">
@@ -205,7 +222,7 @@
                     "
                   >
                     <option value="">Seleccionar...</option>
-                    <option v-for="p in perfiles" :key="p.id" :value="p.id">
+                    <option v-for="p in availablePerfiles" :key="p.id" :value="p.id">
                       {{ p.nombre }}
                     </option>
                   </select>
@@ -307,8 +324,10 @@
                     v-for="c in filteredCandidates"
                     :key="c.id"
                     @click="
-                      selectedCandidate = c;
-                      search = '';
+                      if (!c.esta_ocupado) {
+                        selectedCandidate = c;
+                        search = '';
+                      }
                     "
                     style="
                       padding: 1rem;
@@ -316,6 +335,7 @@
                       cursor: pointer;
                       transition: background 0.2s;
                     "
+                    :style="c.esta_ocupado ? 'cursor: not-allowed; opacity: 0.7;' : ''"
                     onmouseover="this.style.background = '#f9fafb'"
                     onmouseout="this.style.background = 'white'"
                   >
@@ -347,6 +367,20 @@
                         </div>
                       </div>
                       <span
+                        v-if="c.esta_ocupado"
+                        style="
+                          font-size: 10px;
+                          font-weight: 700;
+                          padding: 0.125rem 0.5rem;
+                          background: #fee2e2;
+                          color: #b91c1c;
+                          border-radius: 0.25rem;
+                          border: 1px solid #fecaca;
+                        "
+                        >OCUPADO</span
+                      >
+                      <span
+                        v-else
                         style="
                           font-size: 10px;
                           font-weight: 700;
@@ -759,8 +793,16 @@ const filteredCandidates = computed(() => {
   );
 });
 
+const availablePerfiles = computed(() => {
+  return perfiles.value.filter(
+    (p) =>
+      !p.nombre.toUpperCase().includes("LIDER") &&
+      !p.nombre.toUpperCase().includes("LÍDER"),
+  );
+});
+
 onMounted(async () => {
-  fetchData();
+  await fetchData();
 
   try {
     const profs = await api.get("/admin/perfiles");
@@ -768,8 +810,14 @@ onMounted(async () => {
   } catch (e) {}
 
   try {
-    const users = await api.get("/admin/usuarios", { params: { limit: 1000 } });
-    // Only simple un-assigned filtering... Note: The Laravel view was much more complex, but here we'll filter out users already in equipo.
+    const eventId = equipo.value?.proyecto?.evento_id;
+    console.log("DEBUG: Event ID to fetch users:", eventId);
+    const users = await api.get("/admin/usuarios", { 
+      params: { 
+        limit: 1000,
+        evento_id: eventId ? Number(eventId) : undefined
+      } 
+    });
     allUsers.value = users.data.data.usuarios || [];
   } catch (e) {}
 });

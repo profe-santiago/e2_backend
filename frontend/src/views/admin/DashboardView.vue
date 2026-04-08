@@ -134,10 +134,10 @@
                 <span>Próximos Eventos</span>
                 <router-link to="/admin/eventos" style="font-size:.875rem;color:#4f46e5;text-decoration:none;font-weight:600">Ver todo</router-link>
               </div>
-              <div class="card-body">
+              <div class="card-body" style="height:18rem;overflow-y:auto">
                 <div v-if="!data.eventos_activos?.length" class="empty-state"><p>No hay eventos programados.</p></div>
                 <div v-else style="display:flex;flex-direction:column;gap:1rem">
-                  <div v-for="e in data.eventos_activos" :key="e.id" class="event-item">
+                  <div v-for="e in data.eventos_activos.slice(0, 3)" :key="e.id" class="event-item">
                     <div class="event-date-box">
                       <span class="month">{{ getMonth(e.fecha_inicio) }}</span>
                       <span class="day">{{ getDay(e.fecha_inicio) }}</span>
