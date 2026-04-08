@@ -46,94 +46,114 @@
         </div>
       </div>
 
-      <!-- Stats Cards Grid -->
-      <div class="stats-grid">
-        <div v-if="isVisible('stats_users')" class="stat-card">
-          <div class="stat-top">
-            <div><p class="stat-label">Total Usuarios</p><h4 class="stat-value">{{ (data.total_jueces || 0) + (data.total_participantes || 0) }}</h4></div>
-            <div class="stat-icon indigo"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg></div>
-          </div>
-          <div class="stat-sub"><span class="green">{{ data.total_jueces || 0 }} Jueces</span><span class="muted"> | {{ data.total_participantes || 0 }} Alumnos</span></div>
-        </div>
-        <div v-if="isVisible('stats_equipos')" class="stat-card">
-          <div class="stat-top">
-            <div><p class="stat-label">Equipos Activos</p><h4 class="stat-value">{{ data.total_equipos || 0 }}</h4></div>
-            <div class="stat-icon blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg></div>
-          </div>
-          <div class="stat-sub"><span class="badge badge-blue">Registrados</span></div>
-        </div>
-        <div v-if="isVisible('stats_proyectos')" class="stat-card">
-          <div class="stat-top">
-            <div><p class="stat-label">Proyectos</p><h4 class="stat-value">{{ data.total_proyectos || 0 }}</h4></div>
-            <div class="stat-icon emerald"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg></div>
-          </div>
-          <div class="stat-sub" style="display:flex;justify-content:space-between"><span class="green">{{ data.proyectosEvaluados || 0 }} Evaluados</span><span class="muted">{{ data.proyectosPendientes || 0 }} Pendientes</span></div>
-        </div>
-        <div v-if="isVisible('stats_eventos')" class="stat-card">
-          <div class="stat-top">
-            <div><p class="stat-label">Eventos Activos</p><h4 class="stat-value">{{ data.eventos_activos?.length || 0 }}</h4></div>
-            <div class="stat-icon purple"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
-          </div>
-          <div class="stat-sub"><span class="badge badge-purple">En curso</span></div>
-        </div>
-      </div>
-
-      <!-- Charts Grid -->
-      <div class="charts-grid">
-        <!-- Evaluación Chart -->
-        <div v-if="isVisible('chart_evaluacion')" class="card">
-          <div class="card-header">Progreso de Evaluación</div>
-          <div class="card-body" style="height:18rem;position:relative">
-            <component :is="getChartComponent('chart_evaluacion')" v-if="evalChartData" :data="evalChartData" :options="getChartOptions('chart_evaluacion')" />
-          </div>
-        </div>
-        <!-- Carreras Chart -->
-        <div v-if="isVisible('chart_carreras')" class="card">
-          <div class="card-header">Participación por Carrera</div>
-          <div class="card-body" style="height:18rem;position:relative;display:flex;justify-content:center">
-            <component :is="getChartComponent('chart_carreras')" v-if="carreraChartData" :data="carreraChartData" :options="getChartOptions('chart_carreras')" />
-            <div v-else style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:.875rem">Sin datos de carreras</div>
-          </div>
-        </div>
-        <!-- Pendientes Anual Chart -->
-        <div v-if="isVisible('chart_pendientes_anual')" class="card">
-          <div class="card-header">Proyectos Pendientes (Anual)</div>
-          <div class="card-body" style="height:18rem;position:relative">
-            <component :is="getChartComponent('chart_pendientes_anual')" v-if="pendientesChartData" :data="pendientesChartData" :options="getChartOptions('chart_pendientes_anual')" />
-          </div>
-        </div>
-        <!-- Categorías Chart -->
-        <div v-if="isVisible('chart_categorias')" class="card">
-          <div class="card-header">Proyectos por Categoría</div>
-          <div class="card-body" style="height:18rem;position:relative;display:flex;justify-content:center">
-            <component :is="getChartComponent('chart_categorias')" v-if="categoriasChartData" :data="categoriasChartData" :options="getChartOptions('chart_categorias')" />
-            <div v-else style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:.875rem">Sin datos</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Próximos Eventos List -->
-      <div v-if="isVisible('list_eventos')" class="card" style="margin-top:1.5rem">
-        <div class="card-header">
-          <span>Próximos Eventos</span>
-          <router-link to="/admin/eventos" style="font-size:.875rem;color:#4f46e5;text-decoration:none;font-weight:600">Ver todo</router-link>
-        </div>
-        <div class="card-body">
-          <div v-if="!data.eventos_activos?.length" class="empty-state"><p>No hay eventos programados.</p></div>
-          <div v-else style="display:flex;flex-direction:column;gap:1rem">
-            <div v-for="e in data.eventos_activos" :key="e.id" class="event-item">
-              <div class="event-date-box">
-                <span class="month">{{ getMonth(e.fecha_inicio) }}</span>
-                <span class="day">{{ getDay(e.fecha_inicio) }}</span>
+      <!-- Unified Draggable Dashboard Grid -->
+      <draggable 
+        v-model="widgets" 
+        item-key="key" 
+        class="dashboard-grid"
+        ghost-class="sortable-ghost"
+        @end="savePreferences"
+        :animation="150"
+      >
+        <template #item="{ element: w }">
+          <div v-show="w.is_visible" :class="['widget-item', (w.key.startsWith('chart') || w.key.startsWith('list')) ? 'span-2' : 'span-1']">
+            
+            <!-- stats_users -->
+            <div v-if="w.key === 'stats_users'" class="stat-card stat-full">
+              <div class="stat-top">
+                <div><p class="stat-label">Total Usuarios</p><h4 class="stat-value">{{ (data.total_jueces || 0) + (data.total_participantes || 0) }}</h4></div>
+                <div class="stat-icon indigo"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg></div>
               </div>
-              <div style="flex:1;min-width:0">
-                <h4 style="font-size:.875rem;font-weight:700;color:var(--text-primary)">{{ e.nombre }}</h4>
-                <p style="font-size:.75rem;color:var(--text-muted);margin-top:.25rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.descripcion || '' }}</p>
+              <div class="stat-sub"><span class="green">{{ data.total_jueces || 0 }} Jueces</span><span class="muted"> | {{ data.total_participantes || 0 }} Alumnos</span></div>
+            </div>
+
+            <!-- stats_equipos -->
+            <div v-else-if="w.key === 'stats_equipos'" class="stat-card stat-full">
+              <div class="stat-top">
+                <div><p class="stat-label">Equipos Activos</p><h4 class="stat-value">{{ data.total_equipos || 0 }}</h4></div>
+                <div class="stat-icon blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg></div>
+              </div>
+              <div class="stat-sub"><span class="badge badge-blue">Registrados</span></div>
+            </div>
+
+            <!-- stats_proyectos -->
+            <div v-else-if="w.key === 'stats_proyectos'" class="stat-card stat-full">
+              <div class="stat-top">
+                <div><p class="stat-label">Proyectos</p><h4 class="stat-value">{{ data.total_proyectos || 0 }}</h4></div>
+                <div class="stat-icon emerald"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg></div>
+              </div>
+              <div class="stat-sub" style="display:flex;justify-content:space-between"><span class="green">{{ data.proyectosEvaluados || 0 }} Evaluados</span><span class="muted">{{ data.proyectosPendientes || 0 }} Pendientes</span></div>
+            </div>
+
+            <!-- stats_eventos -->
+            <div v-else-if="w.key === 'stats_eventos'" class="stat-card stat-full">
+              <div class="stat-top">
+                <div><p class="stat-label">Eventos Activos</p><h4 class="stat-value">{{ data.eventos_activos?.length || 0 }}</h4></div>
+                <div class="stat-icon purple"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
+              </div>
+              <div class="stat-sub"><span class="badge badge-purple">En curso</span></div>
+            </div>
+
+            <!-- chart_evaluacion -->
+            <div v-else-if="w.key === 'chart_evaluacion'" class="card card-full">
+              <div class="card-header">Progreso de Evaluación</div>
+              <div class="card-body" style="height:18rem;position:relative">
+                <component :is="getChartComponent('chart_evaluacion')" v-if="evalChartData" :data="evalChartData" :options="getChartOptions('chart_evaluacion')" />
               </div>
             </div>
+
+            <!-- chart_carreras -->
+            <div v-else-if="w.key === 'chart_carreras'" class="card card-full">
+              <div class="card-header">Participación por Carrera</div>
+              <div class="card-body" style="height:18rem;position:relative;display:flex;justify-content:center">
+                <component :is="getChartComponent('chart_carreras')" v-if="carreraChartData" :data="carreraChartData" :options="getChartOptions('chart_carreras')" />
+                <div v-else style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:.875rem">Sin datos de carreras</div>
+              </div>
+            </div>
+
+            <!-- chart_pendientes_anual -->
+            <div v-else-if="w.key === 'chart_pendientes_anual'" class="card card-full">
+              <div class="card-header">Proyectos Pendientes (Anual)</div>
+              <div class="card-body" style="height:18rem;position:relative">
+                <component :is="getChartComponent('chart_pendientes_anual')" v-if="pendientesChartData" :data="pendientesChartData" :options="getChartOptions('chart_pendientes_anual')" />
+              </div>
+            </div>
+
+            <!-- chart_categorias -->
+            <div v-else-if="w.key === 'chart_categorias'" class="card card-full">
+              <div class="card-header">Proyectos por Categoría</div>
+              <div class="card-body" style="height:18rem;position:relative;display:flex;justify-content:center">
+                <component :is="getChartComponent('chart_categorias')" v-if="categoriasChartData" :data="categoriasChartData" :options="getChartOptions('chart_categorias')" />
+                <div v-else style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:.875rem">Sin datos</div>
+              </div>
+            </div>
+
+            <!-- list_eventos -->
+            <div v-else-if="w.key === 'list_eventos'" class="card card-full">
+              <div class="card-header">
+                <span>Próximos Eventos</span>
+                <router-link to="/admin/eventos" style="font-size:.875rem;color:#4f46e5;text-decoration:none;font-weight:600">Ver todo</router-link>
+              </div>
+              <div class="card-body">
+                <div v-if="!data.eventos_activos?.length" class="empty-state"><p>No hay eventos programados.</p></div>
+                <div v-else style="display:flex;flex-direction:column;gap:1rem">
+                  <div v-for="e in data.eventos_activos" :key="e.id" class="event-item">
+                    <div class="event-date-box">
+                      <span class="month">{{ getMonth(e.fecha_inicio) }}</span>
+                      <span class="day">{{ getDay(e.fecha_inicio) }}</span>
+                    </div>
+                    <div style="flex:1;min-width:0">
+                      <h4 style="font-size:.875rem;font-weight:700;color:var(--text-primary)">{{ e.nombre }}</h4>
+                      <p style="font-size:.75rem;color:var(--text-muted);margin-top:.25rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.descripcion || '' }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
-        </div>
-      </div>
+        </template>
+      </draggable>
     </template>
   </AppLayout>
 </template>
@@ -143,6 +163,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { Bar as BarChart, Doughnut as DoughnutChart, Line as LineChart, Pie as PieChart } from 'vue-chartjs'
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js'
 import AppLayout from '../../components/layout/AppLayout.vue'
+import draggable from 'vuedraggable'
 import api from '../../services/api'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, PointElement, LineElement, Title, Tooltip, Legend, Filler)
@@ -264,6 +285,7 @@ function getDay(d) { return d ? new Date(d).getDate() : '' }
 
 async function savePreferences() {
   try {
+    widgets.value.forEach((w, index) => { w.position = index })
     await api.post('/admin/dashboard/preferences', { widgets: widgets.value })
     showCustomizer.value = false
   } catch (e) { console.error(e) }
@@ -322,6 +344,35 @@ onUnmounted(() => document.removeEventListener('click', closeCustomizer))
 .customizer-select { padding: .25rem .5rem; font-size: .75rem; border: 1px solid var(--border, #e5e7eb); border-radius: .375rem; background: var(--card-bg, #fff); color: var(--text-secondary); }
 .customizer-footer { padding: 1rem 1.25rem; background: var(--card-muted, #f9fafb); border-top: 1px solid var(--border, #e5e7eb); }
 
-.charts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 1.5rem; }
-@media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } }
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  padding-bottom: 2.5rem;
+  margin-top: 1.5rem;
+}
+.widget-item {
+  cursor: grab;
+  height: 100%;
+}
+.widget-item:active {
+  cursor: grabbing;
+}
+.widget-item.span-1 { grid-column: span 1; }
+.widget-item.span-2 { grid-column: span 2; }
+.stat-full, .card-full { height: 100%; margin: 0; }
+.sortable-ghost { 
+  opacity: 0.4 !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+:root.dark .sortable-ghost { border-color: #6366f1 !important; }
+
+@media (max-width: 1024px) {
+  .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .widget-item.span-2 { grid-column: span 1; }
+}
 </style>

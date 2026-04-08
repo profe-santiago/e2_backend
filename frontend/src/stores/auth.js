@@ -12,7 +12,8 @@ export const useAuthStore = defineStore('auth', {
     }
     return {
       user,
-      token: localStorage.getItem('token') || null
+      token: localStorage.getItem('token') || null,
+      avatarVersion: Date.now()
     }
   },
 
@@ -63,6 +64,10 @@ export const useAuthStore = defineStore('auth', {
         this.user = data.data
         localStorage.setItem('user', JSON.stringify(data.data))
       } catch { this.logout() }
+    },
+
+    updateAvatarVersion() {
+      this.avatarVersion = Date.now()
     }
   }
 })

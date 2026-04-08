@@ -142,8 +142,12 @@
                     <span class="user-dropdown-name">{{ auth.user?.name }}</span>
                     <span class="user-dropdown-email">{{ auth.user?.email }}</span>
                   </span>
-                  <span class="user-avatar-circle">
-                    {{ initials }}
+                  <span class="user-avatar-circle" style="overflow: hidden; padding: 0; align-items: center; justify-content: center; display: flex;">
+                    <img v-if="auth.user?.id && !avatarFailed" 
+                         :src="`/uploads/avatars/${auth.user.id}.jpg?v=${avatarVersion}`" 
+                         alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;" 
+                         @error="avatarFailed = true" />
+                    <template v-else>{{ initials }}</template>
                   </span>
                   <svg :class="{ 'rotate-180': dropdownOpen }" class="dropdown-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
                 </button>
@@ -173,7 +177,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 
@@ -183,6 +187,13 @@ const router = useRouter()
 const sidebarOpen = ref(false)
 const dropdownOpen = ref(false)
 const isDark = ref(localStorage.getItem('color-theme') === 'dark')
+
+const avatarFailed = ref(false)
+const avatarVersion = computed(() => auth.avatarVersion)
+
+watch(avatarVersion, () => {
+  avatarFailed.value = false
+})
 
 const dashboardRoute = computed(() => auth.dashboardRoute)
 

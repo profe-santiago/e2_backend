@@ -204,6 +204,7 @@ async function uploadAvatar(event) {
     })
     if (data.success) {
       avatarUrl.value = data.path
+      auth.updateAvatarVersion()
       successMsg.value = 'Foto de perfil actualizada'
       setTimeout(() => { successMsg.value = '' }, 3000)
     }
