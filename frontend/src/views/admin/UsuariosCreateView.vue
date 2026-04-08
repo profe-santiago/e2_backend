@@ -142,7 +142,7 @@ async function saveUser() {
     await api.post('/admin/usuarios', {
       nombre: form.value.name,
       email: form.value.email,
-      rol_id: form.value.rol_id,
+      rol_id: Number(form.value.rol_id),
       password: form.value.password
     })
     router.push({ name: 'Usuarios', query: { success: 'Usuario creado correctamente' } })

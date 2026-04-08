@@ -165,7 +165,7 @@ async function updateUser() {
     const payload = {
       nombre: form.value.name,
       email: form.value.email,
-      rol_id: form.value.rol_id
+      rol_id: Number(form.value.rol_id)
     }
     if (form.value.password) payload.password = form.value.password
 
