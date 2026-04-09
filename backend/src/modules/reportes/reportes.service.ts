@@ -22,13 +22,14 @@ export class ReportesService {
   async generateEquiposPdf(res: Response) {
     const equipos = await prisma.equipos.findMany({
       include: { 
-        miembros: { include: { user: true } },
-        proyectos: { include: { evento: true } }
+        equipo_miembros: { include: { users: true } },
+        proyectos: { include: { eventos: true } }
       },
       orderBy: { created_at: 'desc' }
     });
     const data = equipos.map(e => ({
       ...e,
+      miembros: e.equipo_miembros,
       proyecto: e.proyectos[0] || null
     }));
     PdfService.generarReporteEquipos(res, data);
@@ -36,24 +37,28 @@ export class ReportesService {
 
   async generateEventosPdf(res: Response) {
     const eventos = await prisma.eventos.findMany({
-      include: { proyectos: true, criterios: true },
+      include: { proyectos: true, evaluacion_criterios: true },
       orderBy: { created_at: 'desc' }
     });
-    PdfService.generarReporteEventos(res, eventos);
+    const data = eventos.map(ev => ({
+        ...ev,
+        criterios: ev.evaluacion_criterios
+    }));
+    PdfService.generarReporteEventos(res, data);
   }
 
   async generateProyectosPdf(res: Response) {
     const proyectos = await prisma.proyectos.findMany({
       include: { 
-        equipo: { include: { miembros: { include: { user: true } } } },
-        evento: true
+        equipos: { include: { equipo_miembros: { include: { users: true } } } },
+        eventos: true
       },
       orderBy: { created_at: 'desc' }
     });
     const data = proyectos.map(p => ({
         ...p,
-        equipo: p.equipo,
-        evento: p.evento
+        equipo: p.equipos,
+        evento: p.eventos
     }));
     PdfService.generarReporteProyectos(res, data);
   }

@@ -1,5 +1,5 @@
-import PDFDocument from 'pdfkit';
-import { Response } from 'express';
+import PDFDocument from "pdfkit";
+import { Response } from "express";
 
 export interface ConstanciaPayload {
   proyecto: any;
@@ -12,99 +12,181 @@ export interface ConstanciaPayload {
 export class PdfService {
   static generarConstancia(res: Response, payload: ConstanciaPayload) {
     const doc = new PDFDocument({
-      size: 'A4',
-      layout: 'landscape',
-      margins: { top: 40, bottom: 40, left: 60, right: 60 }
+      size: "A4",
+      layout: "landscape",
+      margins: { top: 40, bottom: 40, left: 60, right: 60 },
     });
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="Constancia_${payload.nombreTitular.replace(/[^a-zA-Z0-9]/g, '_')}.pdf"`);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="Constancia_${payload.nombreTitular.replace(/[^a-zA-Z0-9]/g, "_")}.pdf"`,
+    );
     doc.pipe(res);
 
     // ─── Borde decorativo ───
-    doc.rect(30, 20, doc.page.width - 60, doc.page.height - 40)
-       .lineWidth(3)
-       .strokeColor('#1a237e')
-       .stroke();
+    doc
+      .rect(30, 20, doc.page.width - 60, doc.page.height - 40)
+      .lineWidth(3)
+      .strokeColor("#1a237e")
+      .stroke();
 
-    doc.rect(40, 30, doc.page.width - 80, doc.page.height - 60)
-       .lineWidth(1)
-       .strokeColor('#3949ab')
-       .stroke();
+    doc
+      .rect(40, 30, doc.page.width - 80, doc.page.height - 60)
+      .lineWidth(1)
+      .strokeColor("#3949ab")
+      .stroke();
 
     // ─── Encabezado ───
     doc.moveDown(2);
-    doc.fontSize(14).fillColor('#666').font('Helvetica').text('SISTEMA DE GESTIÓN DE PROYECTOS ACADÉMICOS', { align: 'center' });
+    doc
+      .fontSize(14)
+      .fillColor("#666")
+      .font("Helvetica")
+      .text("SISTEMA DE GESTIÓN DE PROYECTOS ACADÉMICOS", { align: "center" });
     doc.moveDown(0.5);
-    doc.fontSize(32).fillColor('#1a237e').font('Helvetica-Bold').text('CONSTANCIA', { align: 'center' });
+    doc
+      .fontSize(32)
+      .fillColor("#1a237e")
+      .font("Helvetica-Bold")
+      .text("CONSTANCIA", { align: "center" });
     doc.moveDown(0.3);
-    doc.fontSize(16).fillColor('#e65100').font('Helvetica-Bold').text(payload.textoLogro, { align: 'center' });
+    doc
+      .fontSize(16)
+      .fillColor("#e65100")
+      .font("Helvetica-Bold")
+      .text(payload.textoLogro, { align: "center" });
 
     // ─── Línea divisora ───
     doc.moveDown(1);
     const lineY = doc.y;
-    doc.moveTo(120, lineY).lineTo(doc.page.width - 120, lineY).lineWidth(2).strokeColor('#1a237e').stroke();
+    doc
+      .moveTo(120, lineY)
+      .lineTo(doc.page.width - 120, lineY)
+      .lineWidth(2)
+      .strokeColor("#1a237e")
+      .stroke();
 
-    // ─── Cuerpo ─── 
+    // ─── Cuerpo ───
     doc.moveDown(1.5);
-    doc.fontSize(13).fillColor('#333').font('Helvetica').text('Se otorga la presente constancia a:', { align: 'center' });
+    doc
+      .fontSize(13)
+      .fillColor("#333")
+      .font("Helvetica")
+      .text("Se otorga la presente constancia a:", { align: "center" });
     doc.moveDown(0.8);
-    doc.fontSize(22).fillColor('#1a237e').font('Helvetica-Bold').text(payload.nombreTitular, { align: 'center' });
+    doc
+      .fontSize(22)
+      .fillColor("#1a237e")
+      .font("Helvetica-Bold")
+      .text(payload.nombreTitular, { align: "center" });
     doc.moveDown(1);
-    doc.fontSize(12).fillColor('#333').font('Helvetica').text(`Por su destacada participación en el evento "${payload.evento.nombre}"`, { align: 'center' });
+    doc
+      .fontSize(12)
+      .fillColor("#333")
+      .font("Helvetica")
+      .text(
+        `Por su destacada participación en el evento "${payload.evento.nombre}"`,
+        { align: "center" },
+      );
     doc.moveDown(0.3);
-    doc.text(`con el proyecto "${payload.proyecto.nombre}"`, { align: 'center' });
+    doc.text(`con el proyecto "${payload.proyecto.nombre}"`, {
+      align: "center",
+    });
 
     // ─── Integrantes ───
-    if (payload.mostrarIntegrantes && payload.proyecto.equipo && payload.proyecto.equipo.miembros) {
+    if (
+      payload.mostrarIntegrantes &&
+      payload.proyecto.equipo &&
+      payload.proyecto.equipo.miembros
+    ) {
       doc.moveDown(1);
-      doc.fontSize(11).fillColor('#555').font('Helvetica-Bold').text('Integrantes del equipo:', { align: 'center' });
+      doc
+        .fontSize(11)
+        .fillColor("#555")
+        .font("Helvetica-Bold")
+        .text("Integrantes del equipo:", { align: "center" });
       doc.moveDown(0.3);
-      doc.font('Helvetica').fontSize(10).fillColor('#444');
+      doc.font("Helvetica").fontSize(10).fillColor("#444");
       payload.proyecto.equipo.miembros.forEach((m: any) => {
         const nombre = m.user ? m.user.name : `Miembro #${m.id}`;
-        doc.text(`• ${nombre}`, { align: 'center' });
+        doc.text(`• ${nombre}`, { align: "center" });
       });
     }
 
     // ─── Fecha ───
     doc.moveDown(2);
-    const fecha = new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
-    doc.fontSize(10).fillColor('#777').font('Helvetica').text(`Fecha de expedición: ${fecha}`, { align: 'center' });
+    const fecha = new Date().toLocaleDateString("es-MX", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    doc
+      .fontSize(10)
+      .fillColor("#777")
+      .font("Helvetica")
+      .text(`Fecha de expedición: ${fecha}`, { align: "center" });
 
     doc.end();
   }
 
-  static generarReporteDashboard(res: Response, data: any, userName: string = 'Admin') {
-    const doc = new PDFDocument({ size: 'A4', layout: 'portrait', margins: { top: 40, bottom: 40, left: 50, right: 50 } });
+  static generarReporteDashboard(
+    res: Response,
+    data: any,
+    userName: string = "Admin",
+  ) {
+    const doc = new PDFDocument({
+      size: "A4",
+      layout: "portrait",
+      margins: { top: 40, bottom: 40, left: 50, right: 50 },
+    });
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="Reporte_Dashboard_${new Date().toISOString().split('T')[0]}.pdf"`);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="Reporte_Dashboard_${new Date().toISOString().split("T")[0]}.pdf"`,
+    );
     doc.pipe(res);
 
     const pageWidth = doc.page.width - 100;
 
     // Header
-    doc.fontSize(24).fillColor('#4f46e5').font('Helvetica-Bold');
-    doc.text('REPORTE GENERAL DE ACTIVIDAD', { align: 'center' });
+    doc.fontSize(24).fillColor("#4f46e5").font("Helvetica-Bold");
+    doc.text("REPORTE GENERAL DE ACTIVIDAD", { align: "center" });
     doc.moveDown(0.2);
-    
+
     const tzOffset = -6 * 60; // Assuming -06:00
     const now = new Date(new Date().getTime() + tzOffset * 60 * 1000);
-    const dateStr = now.toISOString().replace('T', ' ').substring(0, 16);
-    
-    doc.fontSize(12).fillColor('#666').font('Helvetica');
-    doc.text(`Generado el: ${dateStr} | Usuario: ${userName}`, { align: 'center' });
-    
+    const dateStr = now.toISOString().replace("T", " ").substring(0, 16);
+
+    doc.fontSize(12).fillColor("#666").font("Helvetica");
+    doc.text(`Generado el: ${dateStr} | Usuario: ${userName}`, {
+      align: "center",
+    });
+
     // Header border
     doc.moveDown(1);
-    doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).lineWidth(2).strokeColor('#4f46e5').stroke();
+    doc
+      .moveTo(50, doc.y)
+      .lineTo(50 + pageWidth, doc.y)
+      .lineWidth(2)
+      .strokeColor("#4f46e5")
+      .stroke();
     doc.moveDown(1.5);
 
     // Resumen General
-    doc.fontSize(16).fillColor('#1f2937').font('Helvetica-Bold').text('Resumen General');
+    doc
+      .fontSize(16)
+      .fillColor("#1f2937")
+      .font("Helvetica-Bold")
+      .text("Resumen General");
     doc.moveDown(0.2);
-    doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).lineWidth(1).strokeColor('#e5e7eb').stroke();
+    doc
+      .moveTo(50, doc.y)
+      .lineTo(50 + pageWidth, doc.y)
+      .lineWidth(1)
+      .strokeColor("#e5e7eb")
+      .stroke();
     doc.moveDown(0.5);
 
     // 4 Boxes
@@ -113,152 +195,301 @@ export class PdfService {
     const boxHeight = 55;
 
     const stats = [
-      { label: 'JUECES REGISTRADOS', value: data.total_jueces || 0 },
-      { label: 'PARTICIPANTES', value: data.total_participantes || 0 },
-      { label: 'EQUIPOS', value: data.total_equipos || 0 },
-      { label: 'PROYECTOS', value: data.total_proyectos || 0 }
+      { label: "JUECES REGISTRADOS", value: data.total_jueces || 0 },
+      { label: "PARTICIPANTES", value: data.total_participantes || 0 },
+      { label: "EQUIPOS", value: data.total_equipos || 0 },
+      { label: "PROYECTOS", value: data.total_proyectos || 0 },
     ];
 
     stats.forEach((stat, i) => {
-      const x = 50 + (i * boxWidth);
-      doc.rect(x, startY, boxWidth, boxHeight).fillAndStroke('#f9fafb', '#e5e7eb');
-      doc.fillColor('#111827').font('Helvetica-Bold').fontSize(22).text(stat.value.toString(), x, startY + 12, { width: boxWidth, align: 'center' });
-      doc.fillColor('#6b7280').font('Helvetica').fontSize(8).text(stat.label, x, startY + 38, { width: boxWidth, align: 'center' });
+      const x = 50 + i * boxWidth;
+      doc
+        .rect(x, startY, boxWidth, boxHeight)
+        .fillAndStroke("#f9fafb", "#e5e7eb");
+      doc
+        .fillColor("#111827")
+        .font("Helvetica-Bold")
+        .fontSize(22)
+        .text(stat.value.toString(), x, startY + 12, {
+          width: boxWidth,
+          align: "center",
+        });
+      doc
+        .fillColor("#6b7280")
+        .font("Helvetica")
+        .fontSize(8)
+        .text(stat.label, x, startY + 38, { width: boxWidth, align: "center" });
     });
 
     doc.y = startY + boxHeight + 30;
 
     // Estado de Proyectos
-    doc.fontSize(16).fillColor('#1f2937').font('Helvetica-Bold').text('Estado de Proyectos');
+    doc
+      .fontSize(16)
+      .fillColor("#1f2937")
+      .font("Helvetica-Bold")
+      .text("Estado de Proyectos");
     doc.moveDown(0.2);
-    doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).lineWidth(1).strokeColor('#e5e7eb').stroke();
+    doc
+      .moveTo(50, doc.y)
+      .lineTo(50 + pageWidth, doc.y)
+      .lineWidth(1)
+      .strokeColor("#e5e7eb")
+      .stroke();
     doc.moveDown(0.5);
 
     // Table
-    const colStatus = 50, colCant = 150, colPorc = 250, colVis = 350;
-    const drawRow = (y: number, isHeader: boolean, status: string, cant: string, porc: string, fillPercent?: number, color?: string) => {
-      doc.rect(50, y, pageWidth, 25).fillAndStroke(isHeader ? '#f3f4f6' : '#ffffff', '#e5e7eb');
-      doc.fillColor(isHeader ? '#111827' : '#333').font(isHeader ? 'Helvetica-Bold' : 'Helvetica').fontSize(10);
+    const colStatus = 50,
+      colCant = 150,
+      colPorc = 250,
+      colVis = 350;
+    const drawRow = (
+      y: number,
+      isHeader: boolean,
+      status: string,
+      cant: string,
+      porc: string,
+      fillPercent?: number,
+      color?: string,
+    ) => {
+      doc
+        .rect(50, y, pageWidth, 25)
+        .fillAndStroke(isHeader ? "#f3f4f6" : "#ffffff", "#e5e7eb");
+      doc
+        .fillColor(isHeader ? "#111827" : "#333")
+        .font(isHeader ? "Helvetica-Bold" : "Helvetica")
+        .fontSize(10);
       doc.text(status, colStatus + 10, y + 8);
       doc.text(cant, colCant + 10, y + 8);
       doc.text(porc, colPorc + 10, y + 8);
       if (!isHeader && fillPercent !== undefined) {
-        doc.rect(colVis + 10, y + 8, 100, 10).fill('#e5e7eb'); // track
+        doc.rect(colVis + 10, y + 8, 100, 10).fill("#e5e7eb"); // track
         if (fillPercent > 0) {
-          doc.rect(colVis + 10, y + 8, fillPercent, 10).fill(color || '#4f46e5'); // fill
+          doc
+            .rect(colVis + 10, y + 8, fillPercent, 10)
+            .fill(color || "#4f46e5"); // fill
         }
       } else if (isHeader) {
-        doc.text('Visualización', colVis + 10, y + 8);
+        doc.text("Visualización", colVis + 10, y + 8);
       }
     };
 
     let tblY = doc.y;
-    drawRow(tblY, true, 'Estado', 'Cantidad', 'Porcentaje');
+    drawRow(tblY, true, "Estado", "Cantidad", "Porcentaje");
     tblY += 25;
-    
+
     const evs = data.proyectosEvaluados || 0;
     const pends = data.proyectosPendientes || 0;
     const totalP = evs + pends;
-    
+
     const evsPct = totalP > 0 ? (evs / totalP) * 100 : 0;
     const pendsPct = totalP > 0 ? (pends / totalP) * 100 : 0;
 
-    drawRow(tblY, false, 'Evaluados', evs.toString(), `${evsPct.toFixed(1)}%`, evsPct, '#4f46e5');
+    drawRow(
+      tblY,
+      false,
+      "Evaluados",
+      evs.toString(),
+      `${evsPct.toFixed(1)}%`,
+      evsPct,
+      "#4f46e5",
+    );
     tblY += 25;
-    drawRow(tblY, false, 'Pendientes', pends.toString(), `${pendsPct.toFixed(1)}%`, pendsPct, '#9ca3af');
-    
+    drawRow(
+      tblY,
+      false,
+      "Pendientes",
+      pends.toString(),
+      `${pendsPct.toFixed(1)}%`,
+      pendsPct,
+      "#9ca3af",
+    );
+
     doc.y = tblY + 30;
 
     // Participación por Carrera
-    doc.fontSize(16).fillColor('#1f2937').font('Helvetica-Bold').text('Participación por Carrera');
+    doc
+      .fontSize(16)
+      .fillColor("#1f2937")
+      .font("Helvetica-Bold")
+      .text("Participación por Carrera");
     doc.moveDown(0.2);
-    doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).lineWidth(1).strokeColor('#e5e7eb').stroke();
+    doc
+      .moveTo(50, doc.y)
+      .lineTo(50 + pageWidth, doc.y)
+      .lineWidth(1)
+      .strokeColor("#e5e7eb")
+      .stroke();
     doc.moveDown(0.5);
 
     let cy = doc.y;
-    doc.rect(50, cy, pageWidth, 25).fillAndStroke('#f3f4f6', '#e5e7eb');
-    doc.fillColor('#111827').font('Helvetica-Bold').fontSize(10);
-    doc.text('Carrera', 60, cy + 8);
-    doc.text('Participantes', 300, cy + 8);
+    doc.rect(50, cy, pageWidth, 25).fillAndStroke("#f3f4f6", "#e5e7eb");
+    doc.fillColor("#111827").font("Helvetica-Bold").fontSize(10);
+    doc.text("Carrera", 60, cy + 8);
+    doc.text("Participantes", 300, cy + 8);
     cy += 25;
 
-    if (data.participantesPorCarrera && Object.keys(data.participantesPorCarrera).length > 0) {
-      Object.entries(data.participantesPorCarrera).forEach(([carrera, total]) => {
-        if (cy > doc.page.height - 100) { doc.addPage(); cy = 50; }
-        doc.rect(50, cy, pageWidth, 25).fillAndStroke('#ffffff', '#e5e7eb');
-        doc.fillColor('#333').font('Helvetica').fontSize(10);
-        doc.text(carrera, 60, cy + 8, { width: 230, ellipsis: true });
-        doc.text(total?.toString() || '0', 300, cy + 8);
-        cy += 25;
-      });
+    if (
+      data.participantesPorCarrera &&
+      Object.keys(data.participantesPorCarrera).length > 0
+    ) {
+      Object.entries(data.participantesPorCarrera).forEach(
+        ([carrera, total]) => {
+          if (cy > doc.page.height - 100) {
+            doc.addPage();
+            cy = 50;
+          }
+          doc.rect(50, cy, pageWidth, 25).fillAndStroke("#ffffff", "#e5e7eb");
+          doc.fillColor("#333").font("Helvetica").fontSize(10);
+          doc.text(carrera, 60, cy + 8, { width: 230, ellipsis: true });
+          doc.text(total?.toString() || "0", 300, cy + 8);
+          cy += 25;
+        },
+      );
     } else {
-      doc.rect(50, cy, pageWidth, 25).fillAndStroke('#ffffff', '#e5e7eb');
-      doc.fillColor('#666').font('Helvetica-Oblique').fontSize(10);
-      doc.text('No hay datos disponibles.', 60, cy + 8);
+      doc.rect(50, cy, pageWidth, 25).fillAndStroke("#ffffff", "#e5e7eb");
+      doc.fillColor("#666").font("Helvetica-Oblique").fontSize(10);
+      doc.text("No hay datos disponibles.", 60, cy + 8);
       cy += 25;
     }
-    
+
     doc.y = cy + 30;
 
     // Próximos Eventos
-    if (doc.y > doc.page.height - 150) { doc.addPage(); doc.y = 50; }
-    doc.fontSize(16).fillColor('#1f2937').font('Helvetica-Bold').text('Próximos Eventos');
+    if (doc.y > doc.page.height - 150) {
+      doc.addPage();
+      doc.y = 50;
+    }
+    doc
+      .fontSize(16)
+      .fillColor("#1f2937")
+      .font("Helvetica-Bold")
+      .text("Próximos Eventos");
     doc.moveDown(0.2);
-    doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).lineWidth(1).strokeColor('#e5e7eb').stroke();
+    doc
+      .moveTo(50, doc.y)
+      .lineTo(50 + pageWidth, doc.y)
+      .lineWidth(1)
+      .strokeColor("#e5e7eb")
+      .stroke();
     doc.moveDown(0.5);
 
     let cye = doc.y;
     if (data.eventos_activos && data.eventos_activos.length > 0) {
-      doc.rect(50, cye, pageWidth, 25).fillAndStroke('#f3f4f6', '#e5e7eb');
-      doc.fillColor('#111827').font('Helvetica-Bold').fontSize(10);
-      doc.text('Evento', 60, cye + 8);
-      doc.text('Fecha Inicio', 200, cye + 8);
-      doc.text('Descripción', 300, cye + 8);
+      doc.rect(50, cye, pageWidth, 25).fillAndStroke("#f3f4f6", "#e5e7eb");
+      doc.fillColor("#111827").font("Helvetica-Bold").fontSize(10);
+      doc.text("Evento", 60, cye + 8);
+      doc.text("Fecha Inicio", 200, cye + 8);
+      doc.text("Descripción", 300, cye + 8);
       cye += 25;
 
       data.eventos_activos.forEach((evento: any) => {
-        if (cye > doc.page.height - 50) { doc.addPage(); cye = 50; }
-        
-        const descText = evento.descripcion || 'Sin descripción';
+        if (cye > doc.page.height - 50) {
+          doc.addPage();
+          cye = 50;
+        }
+
+        const descText = evento.descripcion || "Sin descripción";
         doc.fontSize(9);
-        const descHeight = doc.heightOfString(descText, { width: pageWidth - 260 });
+        const descHeight = doc.heightOfString(descText, {
+          width: pageWidth - 260,
+        });
         const rowHeight = Math.max(25, descHeight + 10);
-        
-        doc.rect(50, cye, pageWidth, rowHeight).fillAndStroke('#ffffff', '#e5e7eb');
-        doc.fillColor('#333').font('Helvetica').fontSize(10);
-        doc.text(evento.nombre, 60, cye + 8, { width: 130, height: 15, ellipsis: true });
-        doc.text(new Date(evento.fecha_inicio).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' }), 200, cye + 8);
-        doc.fontSize(9).fillColor('#666').text(descText, 300, cye + 8, { width: pageWidth - 260 });
+
+        doc
+          .rect(50, cye, pageWidth, rowHeight)
+          .fillAndStroke("#ffffff", "#e5e7eb");
+        doc.fillColor("#333").font("Helvetica").fontSize(10);
+        doc.text(evento.nombre, 60, cye + 8, {
+          width: 130,
+          height: 15,
+          ellipsis: true,
+        });
+        doc.text(
+          new Date(evento.fecha_inicio).toLocaleDateString("es-MX", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          }),
+          200,
+          cye + 8,
+        );
+        doc
+          .fontSize(9)
+          .fillColor("#666")
+          .text(descText, 300, cye + 8, { width: pageWidth - 260 });
         cye += rowHeight;
       });
     } else {
-      doc.fillColor('#666').font('Helvetica-Oblique').fontSize(10).text('No hay eventos programados próximamente.');
+      doc
+        .fillColor("#666")
+        .font("Helvetica-Oblique")
+        .fontSize(10)
+        .text("No hay eventos programados próximamente.");
     }
 
     doc.end();
   }
 
-  static generarReporteGlobalEventos(res: Response, ranking: any[], evento: any) {
-    const doc = new PDFDocument({ size: 'A4', layout: 'portrait', margins: { top: 40, bottom: 40, left: 50, right: 50 } });
+  static generarReporteGlobalEventos(
+    res: Response,
+    ranking: any[],
+    evento: any,
+  ) {
+    const doc = new PDFDocument({
+      size: "A4",
+      layout: "portrait",
+      margins: { top: 40, bottom: 40, left: 50, right: 50 },
+    });
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="Resultados_${evento.nombre.replace(/[^a-zA-Z0-9]/g, '_')}.pdf"`);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="Resultados_${evento.nombre.replace(/[^a-zA-Z0-9]/g, "_")}.pdf"`,
+    );
     doc.pipe(res);
 
-    doc.fontSize(20).fillColor('#1a237e').font('Helvetica-Bold').text('Resultados del Evento', { align: 'center' });
+    doc
+      .fontSize(20)
+      .fillColor("#1a237e")
+      .font("Helvetica-Bold")
+      .text("Resultados del Evento", { align: "center" });
     doc.moveDown(0.5);
-    doc.fontSize(14).fillColor('#e65100').font('Helvetica-Bold').text(evento.nombre, { align: 'center' });
+    doc
+      .fontSize(14)
+      .fillColor("#e65100")
+      .font("Helvetica-Bold")
+      .text(evento.nombre, { align: "center" });
     doc.moveDown(0.3);
-    doc.fontSize(10).fillColor('#666').font('Helvetica').text(`Reporte emitido el: ${new Date().toLocaleDateString('es-MX')}`, { align: 'center' });
+    doc
+      .fontSize(10)
+      .fillColor("#666")
+      .font("Helvetica")
+      .text(`Reporte emitido el: ${new Date().toLocaleDateString("es-MX")}`, {
+        align: "center",
+      });
 
     doc.moveDown(2);
-    
+
     if (ranking.length === 0) {
-      doc.fontSize(12).fillColor('#333').text('No se encontraron proyectos en este evento.', { align: 'center' });
+      doc
+        .fontSize(12)
+        .fillColor("#333")
+        .text("No se encontraron proyectos en este evento.", {
+          align: "center",
+        });
     } else {
       ranking.forEach((r, idx) => {
-        doc.fontSize(12).fillColor('#333').font('Helvetica-Bold').text(`${idx + 1}. ${r.proyecto.nombre}`);
-        doc.fontSize(10).fillColor('#555').font('Helvetica').text(`Equipo: ${r.proyecto.equipo || 'Sin Equipo'}`);
+        doc
+          .fontSize(12)
+          .fillColor("#333")
+          .font("Helvetica-Bold")
+          .text(`${idx + 1}. ${r.proyecto.nombre}`);
+        doc
+          .fontSize(10)
+          .fillColor("#555")
+          .font("Helvetica")
+          .text(`Equipo: ${r.proyecto.equipo || "Sin Equipo"}`);
         doc.text(`Puntaje Final: ${Number(r.puntaje_total).toFixed(2)}`);
         doc.moveDown(1);
       });
@@ -268,71 +499,333 @@ export class PdfService {
   }
 
   static generarReporteUsuarios(res: Response, usuarios: any[]) {
-    const doc = new PDFDocument({ size: 'A4', layout: 'portrait', margins: { top: 50, bottom: 50, left: 50, right: 50 } });
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="Reporte_Usuarios_${new Date().toISOString().split('T')[0]}.pdf"`);
+    const doc = new PDFDocument({
+      size: "A4",
+      layout: "portrait",
+      margins: { top: 40, bottom: 40, left: 40, right: 40 },
+    });
+    const primaryColor = "#4f46e5";
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="Reporte_Usuarios_${new Date().toISOString().split("T")[0]}.pdf"`,
+    );
     doc.pipe(res);
 
-    doc.fontSize(20).fillColor('#1a237e').font('Helvetica-Bold').text('Reporte General de Usuarios', { align: 'center' });
+    // Header
+    doc
+      .fontSize(18)
+      .fillColor(primaryColor)
+      .font("Helvetica-Bold")
+      .text("REPORTE DE USUARIOS", { align: "center" });
+    doc
+      .fontSize(10)
+      .fillColor("#666")
+      .font("Helvetica")
+      .text(`Generado el: ${new Date().toLocaleString("es-MX")}`, {
+        align: "center",
+      });
+    doc.moveDown(0.5);
+    doc
+      .moveTo(40, doc.y)
+      .lineTo(555, doc.y)
+      .lineWidth(2)
+      .strokeColor(primaryColor)
+      .stroke();
     doc.moveDown(1);
-    usuarios.forEach((u: any, i: number) => {
-      doc.fontSize(12).fillColor('#333').font('Helvetica-Bold').text(`${i+1}. ${u.name}`);
-      doc.fontSize(10).font('Helvetica').text(`Email: ${u.email}`);
-      doc.text(`Rol: ${u.role || 'Sin rol'}`);
-      if (u.carrera) doc.text(`Carrera: ${u.carrera}`);
-      doc.moveDown(0.5);
+
+    // Table Header
+    const yHeader = doc.y;
+    doc.rect(40, yHeader, 515, 20).fill(primaryColor);
+    doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(9);
+    doc.text("ID", 45, yHeader + 6);
+    doc.text("Nombre", 80, yHeader + 6);
+    doc.text("Email", 220, yHeader + 6);
+    doc.text("Rol", 380, yHeader + 6);
+    doc.text("Fecha Reg.", 480, yHeader + 6);
+    doc.y = yHeader + 20;
+
+    // Rows
+    usuarios.forEach((u, i) => {
+      const y = doc.y;
+      if (y > 750) {
+        doc.addPage();
+        doc.y = 40;
+      }
+      const currentY = doc.y;
+      if (i % 2 === 1) doc.rect(40, currentY, 515, 20).fill("#f9fafb");
+
+      doc.fillColor("#333").font("Helvetica").fontSize(8);
+      doc.text(u.id.toString(), 45, currentY + 6);
+      doc.text(u.name || "N/A", 80, currentY + 6, {
+        width: 130,
+        ellipsis: true,
+      });
+      doc.text(u.email || "N/A", 220, currentY + 6, {
+        width: 150,
+        ellipsis: true,
+      });
+      doc.text(u.role || "PARTICIPANTE", 380, currentY + 6);
+      doc.text(
+        new Date(u.created_at).toLocaleDateString("es-MX"),
+        480,
+        currentY + 6,
+      );
+
+      doc
+        .moveTo(40, currentY + 20)
+        .lineTo(555, currentY + 20)
+        .lineWidth(0.5)
+        .strokeColor("#e5e7eb")
+        .stroke();
+      doc.y = currentY + 20;
     });
+
     doc.end();
   }
 
   static generarReporteEquipos(res: Response, equipos: any[]) {
-    const doc = new PDFDocument({ size: 'A4', layout: 'portrait', margins: { top: 50, bottom: 50, left: 50, right: 50 } });
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="Reporte_Equipos_${new Date().toISOString().split('T')[0]}.pdf"`);
+    const doc = new PDFDocument({
+      size: "A4",
+      layout: "portrait",
+      margins: { top: 40, bottom: 40, left: 40, right: 40 },
+    });
+    const primaryColor = "#3b82f6";
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="Reporte_Equipos_${new Date().toISOString().split("T")[0]}.pdf"`,
+    );
     doc.pipe(res);
 
-    doc.fontSize(20).fillColor('#1a237e').font('Helvetica-Bold').text('Reporte de Equipos', { align: 'center' });
+    doc
+      .fontSize(18)
+      .fillColor(primaryColor)
+      .font("Helvetica-Bold")
+      .text("REPORTE DE EQUIPOS", { align: "center" });
+    doc
+      .fontSize(10)
+      .fillColor("#666")
+      .font("Helvetica")
+      .text(`Generado el: ${new Date().toLocaleString("es-MX")}`, {
+        align: "center",
+      });
+    doc.moveDown(0.5);
+    doc
+      .moveTo(40, doc.y)
+      .lineTo(555, doc.y)
+      .lineWidth(2)
+      .strokeColor(primaryColor)
+      .stroke();
     doc.moveDown(1);
-    equipos.forEach((e: any, i: number) => {
-      doc.fontSize(12).fillColor('#333').font('Helvetica-Bold').text(`${i+1}. ${e.nombre}`);
-      doc.fontSize(10).font('Helvetica').text(`Proyecto: ${e.proyecto?.nombre || 'N/A'}`);
-      doc.text(`Integrantes: ${e.miembros?.length || 0}`);
-      doc.moveDown(0.5);
+
+    const yHeader = doc.y;
+    doc.rect(40, yHeader, 515, 20).fill(primaryColor);
+    doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(9);
+    doc.text("Equipo", 45, yHeader + 6);
+    doc.text("Evento", 180, yHeader + 6);
+    doc.text("Proyecto", 320, yHeader + 6);
+    doc.text("Integrantes", 440, yHeader + 6);
+    doc.y = yHeader + 20;
+
+    equipos.forEach((e, i) => {
+      const y = doc.y;
+      if (y > 750) {
+        doc.addPage();
+        doc.y = 40;
+      }
+      const currentY = doc.y;
+      if (i % 2 === 1) doc.rect(40, currentY, 515, 20).fill("#f9fafb");
+
+      doc.fillColor("#333").font("Helvetica").fontSize(8);
+      doc.text(e.nombre || "N/A", 45, currentY + 6, {
+        width: 130,
+        ellipsis: true,
+      });
+      doc.text(e.proyecto?.eventos?.nombre || "N/A", 180, currentY + 6, {
+        width: 130,
+        ellipsis: true,
+      });
+      doc.text(e.proyecto?.nombre || "Sin proyecto", 320, currentY + 6, {
+        width: 110,
+        ellipsis: true,
+      });
+      doc.text(e.miembros?.length.toString() || "0", 440, currentY + 6);
+
+      doc
+        .moveTo(40, currentY + 20)
+        .lineTo(555, currentY + 20)
+        .lineWidth(0.5)
+        .strokeColor("#e5e7eb")
+        .stroke();
+      doc.y = currentY + 20;
     });
+
     doc.end();
   }
 
   static generarReporteEventos(res: Response, eventos: any[]) {
-    const doc = new PDFDocument({ size: 'A4', layout: 'portrait', margins: { top: 50, bottom: 50, left: 50, right: 50 } });
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="Reporte_Eventos_${new Date().toISOString().split('T')[0]}.pdf"`);
+    const doc = new PDFDocument({
+      size: "A4",
+      layout: "portrait",
+      margins: { top: 40, bottom: 40, left: 40, right: 40 },
+    });
+    const primaryColor = "#9333ea";
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="Reporte_Eventos_${new Date().toISOString().split("T")[0]}.pdf"`,
+    );
     doc.pipe(res);
 
-    doc.fontSize(20).fillColor('#1a237e').font('Helvetica-Bold').text('Reporte de Eventos', { align: 'center' });
+    doc
+      .fontSize(18)
+      .fillColor(primaryColor)
+      .font("Helvetica-Bold")
+      .text("REPORTE DE EVENTOS", { align: "center" });
+    doc
+      .fontSize(10)
+      .fillColor("#666")
+      .font("Helvetica")
+      .text(`Generado el: ${new Date().toLocaleString("es-MX")}`, {
+        align: "center",
+      });
+    doc.moveDown(0.5);
+    doc
+      .moveTo(40, doc.y)
+      .lineTo(555, doc.y)
+      .lineWidth(2)
+      .strokeColor(primaryColor)
+      .stroke();
     doc.moveDown(1);
+
+    const yHeader = doc.y;
+    doc.rect(40, yHeader, 515, 20).fill(primaryColor);
+    doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(9);
+    doc.text("Evento", 45, yHeader + 6);
+    doc.text("Inicio", 200, yHeader + 6);
+    doc.text("Fin", 300, yHeader + 6);
+    doc.text("Proyectos", 400, yHeader + 6);
+    doc.text("Estado", 480, yHeader + 6);
+    doc.y = yHeader + 20;
+
     eventos.forEach((e, i) => {
-      doc.fontSize(12).fillColor('#333').font('Helvetica-Bold').text(`${i+1}. ${e.nombre}`);
-      doc.fontSize(10).font('Helvetica').text(`Fecha: ${new Date(e.fecha_inicio).toLocaleDateString()} - ${new Date(e.fecha_fin).toLocaleDateString()}`);
-      doc.text(`Proyectos: ${e.proyectos?.length || 0}`);
-      doc.moveDown(0.5);
+      const y = doc.y;
+      if (y > 750) {
+        doc.addPage();
+        doc.y = 40;
+      }
+      const currentY = doc.y;
+      if (i % 2 === 1) doc.rect(40, currentY, 515, 20).fill("#f9fafb");
+
+      const isPast = new Date(e.fecha_fin) < new Date();
+      doc.fillColor("#333").font("Helvetica").fontSize(8);
+      doc.text(e.nombre || "N/A", 45, currentY + 6, {
+        width: 150,
+        ellipsis: true,
+      });
+      doc.text(
+        new Date(e.fecha_inicio).toLocaleDateString("es-MX"),
+        200,
+        currentY + 6,
+      );
+      doc.text(
+        new Date(e.fecha_fin).toLocaleDateString("es-MX"),
+        300,
+        currentY + 6,
+      );
+      doc.text(e.proyectos?.length.toString() || "0", 400, currentY + 6);
+      doc.text(isPast ? "FINALIZADO" : "ACTIVO", 480, currentY + 6);
+
+      doc
+        .moveTo(40, currentY + 20)
+        .lineTo(555, currentY + 20)
+        .lineWidth(0.5)
+        .strokeColor("#e5e7eb")
+        .stroke();
+      doc.y = currentY + 20;
     });
+
     doc.end();
   }
 
   static generarReporteProyectos(res: Response, proyectos: any[]) {
-    const doc = new PDFDocument({ size: 'A4', layout: 'portrait', margins: { top: 50, bottom: 50, left: 50, right: 50 } });
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="Reporte_Proyectos_${new Date().toISOString().split('T')[0]}.pdf"`);
+    const doc = new PDFDocument({
+      size: "A4",
+      layout: "portrait",
+      margins: { top: 40, bottom: 40, left: 40, right: 40 },
+    });
+    const primaryColor = "#10b981";
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="Reporte_Proyectos_${new Date().toISOString().split("T")[0]}.pdf"`,
+    );
     doc.pipe(res);
 
-    doc.fontSize(20).fillColor('#1a237e').font('Helvetica-Bold').text('Reporte de Proyectos', { align: 'center' });
+    doc
+      .fontSize(18)
+      .fillColor(primaryColor)
+      .font("Helvetica-Bold")
+      .text("REPORTE DE PROYECTOS", { align: "center" });
+    doc
+      .fontSize(10)
+      .fillColor("#666")
+      .font("Helvetica")
+      .text(`Generado el: ${new Date().toLocaleString("es-MX")}`, {
+        align: "center",
+      });
+    doc.moveDown(0.5);
+    doc
+      .moveTo(40, doc.y)
+      .lineTo(555, doc.y)
+      .lineWidth(2)
+      .strokeColor(primaryColor)
+      .stroke();
     doc.moveDown(1);
+
+    const yHeader = doc.y;
+    doc.rect(40, yHeader, 515, 20).fill(primaryColor);
+    doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(9);
+    doc.text("Proyecto", 45, yHeader + 6);
+    doc.text("Equipo", 200, yHeader + 6);
+    doc.text("Evento", 350, yHeader + 6);
+    doc.text("Calificación", 480, yHeader + 6);
+    doc.y = yHeader + 20;
+
     proyectos.forEach((p, i) => {
-      doc.fontSize(12).fillColor('#333').font('Helvetica-Bold').text(`${i+1}. ${p.nombre}`);
-      doc.fontSize(10).font('Helvetica').text(`Equipo: ${p.equipo?.nombre || 'N/A'}`);
-      doc.text(`Evento: ${p.evento?.nombre || 'N/A'}`);
-      doc.moveDown(0.5);
+      const y = doc.y;
+      if (y > 750) {
+        doc.addPage();
+        doc.y = 40;
+      }
+      const currentY = doc.y;
+      if (i % 2 === 1) doc.rect(40, currentY, 515, 20).fill("#f9fafb");
+
+      doc.fillColor("#333").font("Helvetica").fontSize(8);
+      doc.text(p.nombre || "N/A", 45, currentY + 6, {
+        width: 150,
+        ellipsis: true,
+      });
+      doc.text(p.equipo?.nombre || "Sin Equipo", 200, currentY + 6, {
+        width: 140,
+        ellipsis: true,
+      });
+      doc.text(p.evento?.nombre || "N/A", 350, currentY + 6, {
+        width: 120,
+        ellipsis: true,
+      });
+      doc.text("Pendiente", 480, currentY + 6);
+
+      doc
+        .moveTo(40, currentY + 20)
+        .lineTo(555, currentY + 20)
+        .lineWidth(0.5)
+        .strokeColor("#e5e7eb")
+        .stroke();
+      doc.y = currentY + 20;
     });
+
     doc.end();
   }
 }

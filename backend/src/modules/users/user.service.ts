@@ -29,7 +29,6 @@ export class UserService {
     
     if (options.evento_id) {
       const prisma = (await import('../../utils/prisma')).default;
-      console.log('DEBUG: Buscando ocupados para evento:', options.evento_id);
       try {
         const occupied: any[] = await prisma.$queryRaw`
           SELECT DISTINCT em.user_id 
@@ -37,10 +36,9 @@ export class UserService {
           JOIN proyectos p ON p.equipo_id = em.equipo_id
           WHERE p.evento_id = ${BigInt(options.evento_id)}
         `;
-        console.log('DEBUG: Ocupados encontrados:', occupied.length);
         occupiedUserIds = new Set(occupied.map(o => Number(o.user_id)));
       } catch (sqlError) {
-        console.error('DEBUG: Error SQL Occupied:', sqlError);
+        // Error handled silently
       }
     }
 
