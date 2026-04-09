@@ -36,7 +36,7 @@ const routes = [
   { path: '/participante/perfil', name: 'MiPerfil', component: () => import('../views/participante/MiPerfilView.vue'), meta: { role: 'Participante' } },
   { path: '/participante/registro-inicial', name: 'RegistroInicial', component: () => import('../views/participante/RegistroInicialView.vue'), meta: { role: 'Participante' } },
   { path: '/participante/equipos/crear', name: 'CrearEquipo', component: () => import('../views/participante/EquipoCreateView.vue'), meta: { role: 'Participante' } },
-  { path: '/participante/equipos/editar', name: 'EditarEquipo', component: () => import('../views/participante/EquipoEditView.vue'), meta: { role: 'Participante' } },
+  { path: '/participante/equipos/editar/:id', name: 'EditarEquipo', component: () => import('../views/participante/EquipoEditView.vue'), meta: { role: 'Participante' } },
   { path: '/participante/equipos/unirse', name: 'UnirseEquipo', component: () => import('../views/participante/EquipoJoinView.vue'), meta: { role: 'Participante' } },
   { path: '/participante/bitacora', name: 'Bitacora', component: () => import('../views/participante/BitacoraView.vue'), meta: { role: 'Participante' } },
   // 404
@@ -61,6 +61,14 @@ router.beforeEach((to, from, next) => {
     if (!auth.roles.includes(to.meta.role)) {
       const dest = auth.dashboardRoute
       return next(dest !== '/login' ? dest : '/login')
+    }
+
+    // Mandatory registration lock for participants
+    if (auth.isParticipante && to.name !== 'RegistroInicial') {
+      const isRegistered = auth.user?.carrera && auth.user?.no_control && auth.user?.telefono
+      if (!isRegistered) {
+        return next('/participante/registro-inicial')
+      }
     }
   }
 

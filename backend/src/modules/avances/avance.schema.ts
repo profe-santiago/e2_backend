@@ -8,7 +8,6 @@ import { z } from 'zod';
  *       type: object
  *       required:
  *         - descripcion
- *         - fecha
  *       properties:
  *         descripcion:
  *           type: string
@@ -20,6 +19,6 @@ import { z } from 'zod';
 export const storeAvanceSchema = z.object({
   body: z.object({
     descripcion: z.string().min(1, 'La descripción es requerida'),
-    fecha: z.string().min(1, 'La fecha es requerida')
+    fecha: z.string().optional()
   })
 });

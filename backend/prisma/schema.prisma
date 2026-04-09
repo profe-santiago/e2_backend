@@ -104,10 +104,12 @@ model equipo_interacciones {
   tipo          equipo_interacciones_tipo
   estado        equipo_interacciones_estado @default(PENDIENTE)
   mensaje       String?                     @db.Text
+  perfil_id     BigInt?                     @db.UnsignedBigInt
   respondido_en DateTime?
   created_at    DateTime                    @default(now())
   equipos       equipos                     @relation(fields: [equipo_id], references: [id], onDelete: Cascade)
   users         users                       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  perfiles      perfiles?                   @relation(fields: [perfil_id], references: [id], onDelete: SetNull)
 
   @@index([equipo_id], map: "equipo_interacciones_equipo_id_fkey")
   @@index([user_id], map: "equipo_interacciones_user_id_fkey")
@@ -208,4 +210,5 @@ model perfiles {
   created_at DateTime? @default(now())
   updated_at DateTime?
   deleted_at DateTime?
+  equipo_interacciones equipo_interacciones[]
 }

@@ -55,7 +55,18 @@
                   {{ data.equipo.nombre }}
                 </h3>
                 <div style="display:flex;gap:.5rem;align-items:center">
-                  <router-link to="/participante/bitacora" class="btn btn-sm btn-indigo">Subir Avances</router-link>
+                  <router-link v-if="data.es_lider" :to="'/participante/equipos/editar/' + data.equipo.id" class="btn-manage">
+                    <svg style="width:1rem;height:1rem;margin-right:.25rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    Gestionar
+                  </router-link>
+                  <router-link to="/participante/bitacora" class="btn btn-sm btn-indigo">
+                    <svg style="width:1rem;height:1rem;margin-right:.25rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 11l3 3L22 4m-2 1v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h11"/></svg>
+                    Subir Avances
+                  </router-link>
+                  <button @click="abandonarEquipo" class="btn-leave">
+                    <svg style="width:1rem;height:1rem;margin-right:.25rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                    Abandonar Equipo
+                  </button>
                 </div>
               </div>
               <div style="padding:1.5rem">
@@ -154,15 +165,17 @@
               <div class="card-body" style="padding:1.25rem">
                 <h3 style="font-size:.875rem;font-weight:700;color:var(--text-primary);margin-bottom:1rem">Próximos Eventos</h3>
                 <div v-if="!data.eventos?.length" style="text-align:center;padding:1rem"><p style="font-size:.75rem;color:var(--text-muted)">No hay eventos.</p></div>
-                <div v-else style="display:flex;flex-direction:column;gap:.75rem">
-                  <div v-for="e in data.eventos" :key="e.id" class="event-item" style="padding:.5rem">
-                    <div class="event-date-box" style="width:2.5rem;height:2.5rem;font-size:.5rem">
-                      <span class="month" style="font-size:.5rem">{{ getMonth(e.fecha_inicio) }}</span>
-                      <span class="day" style="font-size:.875rem">{{ getDay(e.fecha_inicio) }}</span>
-                    </div>
-                    <div style="overflow:hidden;min-width:0">
-                      <p style="font-size:.875rem;font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.nombre }}</p>
-                      <p style="font-size:.625rem;color:var(--text-muted)">Cierre: {{ formatShortDate(e.fecha_fin) }}</p>
+                <div v-else style="max-height: 350px; overflow-y: auto; padding-right: 0.5rem;">
+                  <div style="display:flex;flex-direction:column;gap:.75rem">
+                    <div v-for="e in data.eventos" :key="e.id" class="event-item" style="padding:.5rem">
+                      <div class="event-date-box" style="width:2.5rem;height:2.5rem;font-size:.5rem">
+                        <span class="month" style="font-size:.5rem">{{ getMonth(e.fecha_inicio) }}</span>
+                        <span class="day" style="font-size:.875rem">{{ getDay(e.fecha_inicio) }}</span>
+                      </div>
+                      <div style="overflow:hidden;min-width:0">
+                        <p style="font-size:.875rem;font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.nombre }}</p>
+                        <p style="font-size:.625rem;color:var(--text-muted)">Cierre: {{ formatShortDate(e.fecha_fin) }}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -204,19 +217,21 @@
           </router-link>
 
           <!-- Próximos Eventos (sin equipo) -->
-          <div class="card">
-            <div class="card-body" style="padding:1.5rem">
+          <div class="card" style="display:flex;flex-direction:column;min-height:300px">
+            <div class="card-body" style="padding:1.5rem;flex:1">
               <h3 style="font-size:.875rem;font-weight:700;color:var(--text-primary);margin-bottom:1rem">Próximos Eventos</h3>
               <div v-if="!data.eventos?.length" style="text-align:center;padding:1rem"><p style="font-size:.75rem;color:var(--text-muted)">No hay eventos próximos.</p></div>
-              <div v-else style="display:flex;flex-direction:column;gap:.75rem">
-                <div v-for="e in data.eventos" :key="e.id" class="event-item">
-                  <div class="event-date-box">
-                    <span class="month">{{ getMonth(e.fecha_inicio) }}</span>
-                    <span class="day">{{ getDay(e.fecha_inicio) }}</span>
-                  </div>
-                  <div style="overflow:hidden;min-width:0">
-                    <p style="font-size:.875rem;font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="e.nombre">{{ e.nombre }}</p>
-                    <p style="font-size:.625rem;color:var(--text-muted)">Cierre: {{ formatShortDate(e.fecha_fin) }}</p>
+              <div v-else style="max-height: 400px; overflow-y: auto; padding-right: 0.5rem;">
+                <div style="display:flex;flex-direction:column;gap:.75rem">
+                  <div v-for="e in data.eventos" :key="e.id" class="event-item">
+                    <div class="event-date-box">
+                      <span class="month">{{ getMonth(e.fecha_inicio) }}</span>
+                      <span class="day">{{ getDay(e.fecha_inicio) }}</span>
+                    </div>
+                    <div style="overflow:hidden;min-width:0">
+                      <p style="font-size:.875rem;font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="e.nombre">{{ e.nombre }}</p>
+                      <p style="font-size:.625rem;color:var(--text-muted)">Cierre: {{ formatShortDate(e.fecha_fin) }}</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -273,9 +288,12 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import CalendarWidget from '../../components/CalendarWidget.vue'
 import api from '../../services/api'
+
+const router = useRouter()
 
 const data = ref({})
 const loading = ref(true)
@@ -300,7 +318,25 @@ async function fetchData() {
   finally { loading.value = false }
 }
 
-onMounted(fetchData)
+async function abandonarEquipo() {
+  if (!confirm('¿Estás seguro de abandonar el equipo? Si eres el único líder, no podrás hacerlo.')) return;
+  try {
+    loading.value = true;
+    const res = await api.delete('/participante/equipos/salir');
+    if (res.data.success) {
+      alert(res.data.message);
+      fetchData();
+    }
+  } catch (e) {
+    alert(e.response?.data?.message || 'Error al abandonar el equipo');
+  } finally {
+    loading.value = false;
+  }
+}
+
+onMounted(() => {
+  fetchData()
+})
 </script>
 
 <style scoped>
@@ -355,4 +391,42 @@ onMounted(fetchData)
 
 /* Empty state */
 .empty-dashed { text-align: center; padding: 1.5rem; border: 2px dashed var(--border, #d1d5db); border-radius: .5rem; }
+
+/* Action Buttons */
+.btn-manage {
+  display: inline-flex;
+  align-items: center;
+  font-size: .75rem;
+  padding: .375rem .75rem;
+  border-radius: .5rem;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  color: var(--text-secondary, #4b5563);
+  font-weight: 500;
+  transition: all .2s;
+  text-decoration: none;
+}
+.btn-manage:hover { background: var(--bg-muted, #f3f4f6); color: var(--text-primary); }
+
+.btn-leave {
+  display: inline-flex;
+  align-items: center;
+  font-size: .75rem;
+  padding: .375rem .75rem;
+  border-radius: .5rem;
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #dc2626;
+  font-weight: 500;
+  transition: all .2s;
+  cursor: pointer;
+}
+.btn-leave:hover { background: #fee2e2; }
+
+@media (prefers-color-scheme: dark) {
+  .btn-manage { background: #374151; border-color: #4b5563; color: #e5e7eb; }
+  .btn-manage:hover { background: #4b5563; }
+  .btn-leave { background: rgba(220,38,38,.1); border-color: rgba(220,38,38,.2); color: #f87171; }
+  .btn-leave:hover { background: rgba(220,38,38,.2); }
+}
 </style>

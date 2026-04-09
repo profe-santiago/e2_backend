@@ -6,11 +6,11 @@ export class AvanceRepository {
     // Buscar el equipo del usuario directamente via equipo_miembros
     const miembro = await prisma.equipo_miembros.findFirst({
       where: { user_id: BigInt(userId) },
-      include: { equipo: { include: { proyectos: true } } }
+      include: { equipos: { include: { proyectos: true } } }
     });
 
-    if (!miembro || !miembro.equipo.proyectos[0]) return null;
-    return Number(miembro.equipo.proyectos[0].id);
+    if (!miembro || !miembro.equipos.proyectos[0]) return null;
+    return Number(miembro.equipos.proyectos[0].id);
   }
 
   async getAllByProyectoId(proyectoId: number) {
@@ -27,7 +27,6 @@ export class AvanceRepository {
       data: {
         proyecto_id: BigInt(proyectoId),
         descripcion: dto.descripcion,
-        fecha: new Date(dto.fecha),
       }
     });
   }

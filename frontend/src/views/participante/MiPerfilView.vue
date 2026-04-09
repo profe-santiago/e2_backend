@@ -1,118 +1,203 @@
 <template>
   <AppLayout>
-    <div class="profile-container">
-      <h2 class="page-title">Mi Perfil</h2>
-      
-      <div v-if="loading" class="loading">
-        <div class="spinner"></div>
+    <div class="profile-page">
+      <!-- Top Header Row -->
+      <div class="profile-header">
+        <h2 class="title">Mi Perfil</h2>
+        <div class="breadcrumbs">
+          <span>Dashboard</span>
+          <span class="separator">/</span>
+          <span class="current">Perfil</span>
+        </div>
       </div>
-      <template v-else>
-        <!-- Tarjeta de Resumen -->
-        <div class="card summary-card">
-          <div class="summary-content">
-            <div class="avatar">
-              {{ initials }}
-            </div>
-            <div class="info">
-              <h3 class="name">{{ auth.user?.name || 'Cargando...' }}</h3>
-              <p class="email">{{ auth.user?.email }}</p>
-              <div class="badge-role">Participante</div>
+
+      <!-- Main Profile Card -->
+      <div class="card overview-card">
+        <!-- Avatar Section -->
+        <div class="profile-summary">
+          <div class="avatar-wrapper">
+            <div class="avatar-circle" :style="avatarStyle">
+              <img v-if="auth.user?.id && !avatarFailed" 
+                   :src="`/uploads/avatars/${auth.user.id}.jpg?v=${avatarVersion}`" 
+                   alt="Avatar" 
+                   @error="avatarFailed = true" />
+              <span v-else>{{ initials }}</span>
+              
+              <!-- Pencil Icon for upload -->
+              <button class="avatar-edit-btn" @click="$refs.fileInput.click()" title="Cambiar foto">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                </svg>
+              </button>
+              <!-- MOD: Ensure class "hidden-input" is used to hide correctly -->
+              <input type="file" ref="fileInput" class="hidden-input" @change="handleAvatarUpload" accept="image/*" />
             </div>
           </div>
-          <div class="summary-footer">
-            <div class="footer-item">
-              <span class="label">No. Control:</span>
-              <span class="value">{{ profileData.no_control || 'No defindo' }}</span>
-            </div>
-            <div class="footer-item">
-              <span class="label">Carrera:</span>
-              <span class="value">{{ profileData.carrera || 'No definida' }}</span>
-            </div>
+          
+          <div class="user-details">
+            <h1 class="user-name">{{ auth.user?.name }}</h1>
+            <p class="user-email">{{ auth.user?.email }}</p>
+            <div class="badge-role">Participante</div>
           </div>
         </div>
 
-        <!-- Formulario de Información Personal -->
-        <div class="card form-card">
+        <!-- Academic Info Box -->
+        <div class="academic-info-box">
+          <div class="academic-section">
+            <span class="academic-label">No. Control:</span>
+            <span class="academic-value">{{ form.no_control || 'Sin definir' }}</span>
+          </div>
+          <div class="vertical-divider"></div>
+          <div class="academic-section">
+            <span class="academic-label">Carrera:</span>
+            <span class="academic-value">{{ form.carrera || 'Sin definir' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings Cards -->
+      <div class="settings-content">
+        <!-- Información Personal -->
+        <div class="card formal-card">
           <div class="card-header">
             <h3>Información Personal</h3>
-            <p>Actualiza la información de tu cuenta y dirección de correo electrónico.</p>
           </div>
           <div class="card-body">
-            <form @submit.prevent="saveProfile">
+            <p class="description-text">Actualiza la información de tu perfil y dirección de correo electrónico.</p>
+            <form @submit.prevent="saveProfile" class="formal-form mt-4">
               <div v-if="successMsg" class="alert-success">{{ successMsg }}</div>
               <div v-if="errorMsg" class="alert-error">{{ errorMsg }}</div>
 
-              <div class="form-group">
-                <label for="name">Nombre Completo</label>
-                <input id="name" type="text" v-model="form.nombre" required class="input" />
-              </div>
-
-              <div class="form-group">
-                <label for="email">Correo Electrónico</label>
-                <input id="email" type="email" v-model="form.email" required class="input" />
-              </div>
-
               <div class="form-grid">
                 <div class="form-group">
-                  <label for="no_control">Número de Control</label>
-                  <input id="no_control" type="text" v-model="form.no_control" class="input" placeholder="Ej: 20120000" />
+                  <label>Nombre Completo</label>
+                  <input v-model="form.nombre" type="text" required class="formal-control" />
                 </div>
-                
                 <div class="form-group">
-                  <label for="telefono">Teléfono</label>
-                  <input id="telefono" type="text" v-model="form.telefono" class="input" placeholder="Opcional" />
+                  <label>Correo Electrónico</label>
+                  <input v-model="form.email" type="email" required class="formal-control" />
                 </div>
               </div>
 
-              <div class="form-group">
-                <label for="carrera">Carrera</label>
-                <select id="carrera" v-model="form.carrera" class="input">
-                  <option value="" disabled>Selecciona una carrera</option>
-                  <option v-for="(nombre, idx) in carrerasDisponibles" :key="idx" :value="nombre">
-                    {{ nombre }}
-                  </option>
-                </select>
+              <div class="form-grid mt-4">
+                <div class="form-group">
+                  <label>Número de Control</label>
+                  <input v-model="form.no_control" type="text" maxlength="8" class="formal-control" />
+                </div>
+                <div class="form-group">
+                  <label>Teléfono</label>
+                  <input v-model="form.telefono" type="text" maxlength="10" class="formal-control" />
+                </div>
               </div>
 
-              <div class="form-actions">
-                <button type="submit" class="btn btn-indigo" :disabled="saving">
-                  {{ saving ? 'Guardando...' : 'Guardar Información' }}
+              <!-- Searchable Career Dropdown -->
+              <div class="form-group mt-4">
+                <label>Carrera</label>
+                <div class="dropdown-wrapper" ref="dropdownRef">
+                  <button type="button" 
+                          @click="dropdownOpen = !dropdownOpen"
+                          class="formal-control dropdown-trigger">
+                    <span v-if="form.carrera">{{ form.carrera }}</span>
+                    <span v-else class="text-gray-400">Selecciona tu carrera</span>
+                    <svg class="chevron" :class="{'rotate-180': dropdownOpen}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                  </button>
+
+                  <div v-show="dropdownOpen" class="dropdown-menu">
+                    <div class="search-box">
+                      <input v-model="searchQuery" 
+                             ref="searchInput"
+                             placeholder="Buscar carrera..." 
+                             class="search-input"
+                             @click.stop />
+                    </div>
+                    <ul class="dropdown-list">
+                      <li v-for="c in filteredCarreras" 
+                          :key="c.id"
+                          @click="selectCarrera(c.nombre)"
+                          :class="{active: form.carrera === c.nombre}">
+                        {{ c.nombre }}
+                      </li>
+                      <li v-if="filteredCarreras.length === 0" class="no-results">No se encontraron carreras</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card-footer">
+                <button type="submit" class="btn btn-save" :disabled="saving">
+                  <span v-if="saving" class="spinner-inline"></span>
+                  <span v-else>Guardar</span>
                 </button>
               </div>
             </form>
           </div>
         </div>
-      </template>
+
+        <!-- Seguridad / Contraseña -->
+        <div class="card formal-card mt-6">
+          <div class="card-header">
+            <h3>Actualizar Contraseña</h3>
+          </div>
+          <div class="card-body">
+            <p class="description-text">Asegúrese de que su cuenta utilice una contraseña larga y aleatoria para mantener su seguridad.</p>
+            <form @submit.prevent="savePassword" class="formal-form mt-4">
+              <div v-if="pwdSuccessMsg" class="alert-success">{{ pwdSuccessMsg }}</div>
+              <div v-if="pwdErrorMsg" class="alert-error">{{ pwdErrorMsg }}</div>
+
+              <div class="form-group">
+                <label>Contraseña Actual</label>
+                <input v-model="formPwd.current_password" type="password" required class="formal-control" />
+              </div>
+
+              <div class="form-group mt-4">
+                <label>Contraseña Nueva</label>
+                <input v-model="formPwd.password" type="password" required class="formal-control" />
+              </div>
+
+              <div class="form-group mt-4">
+                <label>Confirmar Contraseña</label>
+                <input v-model="formPwd.password_confirmation" type="password" required class="formal-control" />
+              </div>
+
+              <div class="card-footer">
+                <button type="submit" class="btn btn-save" :disabled="savingPwd">
+                  <span v-if="savingPwd" class="spinner-inline"></span>
+                  <span v-else>Guardar</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
   </AppLayout>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import { useAuthStore } from '../../stores/auth'
 import api from '../../services/api'
 
-const carrerasDisponibles = [
-  'Ingeniería en Sistemas Computacionales',
-  'Ingeniería Mecánica',
-  'Ingeniería Eléctrica',
-  'Ingeniería Electrónica',
-  'Ingeniería Química',
-  'Ingeniería Industrial',
-  'Ingeniería Civil',
-  'Ingeniería en Gestión Empresarial',
-  'Licenciatura en Administración',
-  'Contador Público'
-]
-
 const auth = useAuthStore()
 const loading = ref(true)
 const saving = ref(false)
-const profileData = ref({})
-
 const successMsg = ref('')
 const errorMsg = ref('')
+
+const savingPwd = ref(false)
+const pwdSuccessMsg = ref('')
+const pwdErrorMsg = ref('')
+
+// Dropdown logic
+const dropdownOpen = ref(false)
+const dropdownRef = ref(null)
+const searchQuery = ref('')
+const searchInput = ref(null)
+const carreras = ref([])
+
+const avatarFailed = ref(false)
+const avatarVersion = computed(() => auth.avatarVersion)
 
 const form = ref({
   nombre: '',
@@ -122,39 +207,82 @@ const form = ref({
   carrera: ''
 })
 
+const formPwd = ref({
+  current_password: '',
+  password: '',
+  password_confirmation: ''
+})
+
 const initials = computed(() => {
   if (!auth.user?.name) return 'U'
   return auth.user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
 })
 
-const fetchProfile = async () => {
+const avatarStyle = computed(() => {
+  return !auth.user?.id || avatarFailed.value 
+    ? { background: '#e5e7eb', color: '#6b7280' }
+    : {}
+})
+
+const filteredCarreras = computed(() => {
+  if (!searchQuery.value) return carreras.value
+  const q = searchQuery.value.toLowerCase()
+  return carreras.value.filter(c => c.nombre.toLowerCase().includes(q))
+})
+
+function selectCarrera(name) {
+  form.value.carrera = name
+  dropdownOpen.value = false
+  searchQuery.value = ''
+}
+
+function handleClickOutside(e) {
+  if (dropdownRef.value && !dropdownRef.value.contains(e.target)) {
+    dropdownOpen.value = false
+  }
+}
+
+async function fetchProfile() {
   try {
-    const res = await api.get('/auth/me')
-    profileData.value = res.data.data
-    form.value.nombre = profileData.value.name || ''
-    form.value.email = profileData.value.email || ''
-    form.value.no_control = profileData.value.no_control || ''
-    form.value.telefono = profileData.value.telefono || ''
-    form.value.carrera = profileData.value.carrera || ''
+    const [resMe, resCarreras] = await Promise.all([
+      api.get('/auth/me'),
+      api.get('/participante/dashboard/registro-inicial')
+    ])
+    
+    const user = resMe.data.data
+    form.value = {
+      nombre: user.name || '',
+      email: user.email || '',
+      no_control: user.no_control || '',
+      telefono: user.telefono || '',
+      carrera: user.carrera || ''
+    }
+    
+    carreras.value = resCarreras.data.data.carreras
   } catch(e) {
-    console.error('Error cargando perfil:', e)
+    console.error(e)
   } finally {
     loading.value = false
   }
 }
 
-const saveProfile = async () => {
+async function saveProfile() {
   successMsg.value = ''
   errorMsg.value = ''
   saving.value = true
+  
+  const payload = {
+    ...form.value,
+    no_control: form.value.no_control?.toString().replace(/\D/g, ''),
+    telefono: form.value.telefono?.toString().replace(/\D/g, ''),
+    name: form.value.nombre
+  }
+
   try {
-    // We update using /admin/usuarios/:id endpoint which works for self-update too
-    // Alternatively wait for a cleaner user endpoint, but this one works.
-    await api.put(`/admin/usuarios/${auth.user.id}`, form.value)
+    await api.put('/auth/profile', payload)
     successMsg.value = '¡Perfil actualizado correctamente!'
-    auth.checkAuth() // reload auth profile details
-    await fetchProfile() // reload extra fields
-    setTimeout(() => { successMsg.value = '' }, 3000)
+    await auth.fetchMe()
+    setTimeout(() => successMsg.value = '', 4000)
   } catch(e) {
     errorMsg.value = e.response?.data?.message || 'Error al guardar los cambios'
   } finally {
@@ -162,247 +290,420 @@ const saveProfile = async () => {
   }
 }
 
+async function savePassword() {
+  pwdSuccessMsg.value = ''
+  pwdErrorMsg.value = ''
+  
+  if (formPwd.value.password !== formPwd.value.password_confirmation) {
+    pwdErrorMsg.value = 'Las contraseñas no coinciden'
+    return
+  }
+
+  savingPwd.value = true
+  try {
+    await api.put('/auth/password', formPwd.value)
+    pwdSuccessMsg.value = 'Contraseña actualizada correctamente'
+    formPwd.value = { current_password: '', password: '', password_confirmation: '' }
+    setTimeout(() => pwdSuccessMsg.value = '', 4000)
+  } catch(e) {
+    pwdErrorMsg.value = e.response?.data?.message || 'Error al actualizar la contraseña'
+  } finally {
+    savingPwd.value = false
+  }
+}
+
+async function handleAvatarUpload(e) {
+  const file = e.target.files[0]
+  if (!file) return
+  
+  const formData = new FormData()
+  formData.append('avatar', file)
+  
+  try {
+    await api.post('/auth/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    auth.updateAvatarVersion()
+    avatarFailed.value = false
+    // Force immediate UI feedback if needed
+  } catch(e) {
+    alert(e.response?.data?.message || 'Error al subir imagen')
+  }
+}
+
+// Watch for avatar version changes to reset failed state
+watch(avatarVersion, () => {
+  avatarFailed.value = false
+})
+
 onMounted(() => {
+  document.addEventListener('mousedown', handleClickOutside)
   fetchProfile()
+})
+
+onUnmounted(() => {
+  document.removeEventListener('mousedown', handleClickOutside)
+})
+
+watch(dropdownOpen, (val) => {
+  if (val) nextTick(() => searchInput.value?.focus())
 })
 </script>
 
 <style scoped>
-.profile-container {
-  max-width: 48rem;
+.profile-page {
+  padding: 2rem;
+  max-width: 60rem; /* Reduced width for better symmetry */
   margin: 0 auto;
 }
 
-.page-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary, #111827);
-  margin-bottom: 1.5rem;
-}
-
-.card {
-  background: var(--card-bg, #fff);
-  border: 1px solid var(--border, #e5e7eb);
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-  margin-bottom: 1.5rem;
-  overflow: hidden;
-}
-
-.summary-card {
+/* Header Row */
+.profile-header {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
 }
 
-.summary-content {
-  padding: 1.5rem;
+.profile-header .title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.breadcrumbs {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
 }
 
-.avatar {
-  width: 5rem;
-  height: 5rem;
-  border-radius: 9999px;
-  background: linear-gradient(135deg, #4f46e5, #8b5cf6);
-  color: #fff;
+.breadcrumbs .current {
+  color: #4f46e5;
+  font-weight: 500;
+}
+
+.breadcrumbs .separator {
+  color: #d1d5db;
+}
+
+/* Card General */
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  margin-bottom: 2rem;
+}
+
+/* Overview Card */
+.overview-card {
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.profile-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2.5rem;
+}
+
+.avatar-wrapper {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.avatar-circle {
+  width: 9rem;
+  height: 9rem;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 3rem;
   font-weight: 700;
-  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
 }
 
-.info {
+.avatar-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-edit-btn {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  align-items: center;
+  justify-content: center;
+  color: #4b5563;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s;
 }
 
-.info .name {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text-primary, #111827);
+.avatar-edit-btn:hover {
+  background: #f8fafc;
+  transform: scale(1.05);
 }
 
-.info .email {
-  font-size: 0.875rem;
-  color: var(--text-secondary, #4b5563);
+.avatar-edit-btn svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.hidden-input {
+  display: none !important;
+}
+
+.user-details {
+  text-align: center;
+}
+
+.user-name {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 0.25rem;
+}
+
+.user-email {
+  color: #6b7280;
+  margin-bottom: 1rem;
 }
 
 .badge-role {
   display: inline-block;
-  align-self: flex-start;
-  background: rgba(79, 70, 229, 0.1);
+  padding: 0.25rem 0.75rem;
+  background: #f5f3ff;
   color: #4f46e5;
   font-size: 0.75rem;
-  font-weight: 700;
-  padding: 0.25rem 0.5rem;
+  font-weight: 600;
   border-radius: 9999px;
-  margin-top: 0.25rem;
+  border: 1px solid #e0e7ff;
 }
 
-.summary-footer {
-  background: var(--card-muted, #f9fafb);
-  border-top: 1px solid var(--border, #e5e7eb);
-  padding: 1rem 1.5rem;
-  display: flex;
-  gap: 2rem;
-}
-
-.footer-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-
-.footer-item .label {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  font-weight: 700;
-  color: var(--text-muted, #9ca3af);
-  letter-spacing: 0.05em;
-}
-
-.footer-item .value {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--text-secondary, #4b5563);
-}
-
-.form-card .card-header {
-  padding: 1.5rem 1.5rem 1rem 1.5rem;
-  border-bottom: 1px solid var(--border, #e5e7eb);
-}
-
-.form-card .card-header h3 {
-  font-size: 1.125rem;
-  font-weight: 700;
-  margin-bottom: 0.25rem;
-  color: var(--text-primary, #111827);
-}
-
-.form-card .card-header p {
-  font-size: 0.875rem;
-  color: var(--text-muted, #6b7280);
-}
-
-.form-card .card-body {
+/* Academic Box */
+.academic-info-box {
+  width: 100%;
+  max-width: 50rem;
+  border: 1px solid #f3f4f6;
+  border-radius: 0.75rem;
   padding: 1.5rem;
+  display: flex;
+  align-items: center;
 }
 
-.form-group {
-  margin-bottom: 1.25rem;
+.academic-section {
+  flex: 1;
   display: flex;
   flex-direction: column;
+  align-items: center;
+}
+
+.academic-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.academic-value {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.vertical-divider {
+  width: 1px;
+  height: 3rem;
+  background: #f3f4f6;
+}
+
+/* Formal Cards */
+.formal-card .card-header {
+  padding: 1.5rem 2rem !important;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+.formal-card .card-header h3 {
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  color: #111827 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: left !important;
+}
+
+.formal-card .card-body {
+  padding: 1.5rem 2rem !important;
+}
+
+.formal-form {
+  width: 100%;
+}
+
+.description-text {
+  font-size: 0.875rem !important;
+  color: #4b5563 !important;
+  margin-bottom: 1.25rem !important; /* Proper distance to the form */
+  margin-top: 0 !important; /* Remove any top margin to bring it 'up' */
+  text-align: left !important;
+  width: 100% !important;
 }
 
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.25rem;
+  gap: 1.5rem;
 }
 
-@media (max-width: 640px) {
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
+@media (max-width: 768px) {
+  .form-grid { grid-template-columns: 1fr; }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .form-group label {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--text-secondary, #374151);
-  margin-bottom: 0.5rem;
+  color: #374151;
 }
 
-.input {
+.formal-control {
   width: 100%;
-  padding: 0.625rem 0.875rem;
-  border: 1px solid var(--border, #d1d5db);
-  border-radius: 0.5rem;
+  padding: 0.625rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
   font-size: 0.875rem;
-  background: var(--card-bg, #fff);
-  color: var(--text-primary, #111827);
-  transition: all 0.2s ease;
+  transition: border-color 0.2s;
+  background: #fff;
 }
 
-.input:focus {
+.formal-control:focus {
   outline: none;
   border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  box-shadow: 0 0 0 1px #4f46e5;
 }
 
-.form-actions {
+/* Dropdown */
+.dropdown-trigger {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 1.5rem;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  text-align: left;
 }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
+.chevron { width: 1rem; transition: transform 0.2s; }
+.rotate-180 { transform: rotate(180deg); }
+
+.dropdown-wrapper { position: relative; }
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+  margin-top: 0.25rem;
+  z-index: 50;
+}
+
+.search-box { padding: 0.5rem; border-bottom: 1px solid #f3f4f6; }
+.search-input {
+  width: 100%;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.25rem;
+  font-size: 0.8125rem;
+}
+
+.dropdown-list {
+  max-height: 12rem;
+  overflow-y: auto;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.dropdown-list li {
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.dropdown-list li:hover { background: #f9fafb; }
+.dropdown-list li.active { background: #f5f3ff; color: #4f46e5; font-weight: 600; }
+
+.card-footer {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.btn-save {
+  background: #4f46e5; /* INDIGO BLUE like the other views */
+  color: #fff;
+  padding: 0.6rem 1.75rem;
+  border-radius: 0.375rem;
   font-size: 0.875rem;
   font-weight: 600;
-  border-radius: 0.5rem;
-  border: 1px solid transparent;
-  cursor: pointer;
+  letter-spacing: 0.025em;
   transition: all 0.2s;
 }
 
-.btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.btn-indigo {
-  background: #4f46e5;
-  color: #fff;
-}
-
-.btn-indigo:hover:not(:disabled) {
+.btn-save:hover { 
   background: #4338ca;
+  transform: translateY(-1px);
 }
 
-.alert-success {
-  background: #dcfce7;
-  color: #166534;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  margin-bottom: 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
+.alert-success { background: #ecfdf5; color: #065f46; padding: 1rem; border-radius: 0.375rem; margin-bottom: 1rem; font-size: 0.875rem; }
+.alert-error { background: #fef2f2; color: #991b1b; padding: 1rem; border-radius: 0.375rem; margin-bottom: 1rem; font-size: 0.875rem; }
 
-.alert-error {
-  background: #fee2e2;
-  color: #991b1b;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  margin-bottom: 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
+.mt-4 { margin-top: 1rem; }
+.mt-6 { margin-top: 1.5rem; }
 
-.loading {
-  display: flex;
-  justify-content: center;
-  padding: 3rem;
-}
-.spinner {
-  width: 2rem;
-  height: 2rem;
-  border: 3px solid var(--border);
-  border-top-color: #4f46e5;
+.spinner-inline {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
   border-radius: 50%;
-  animation: spinner 1s linear infinite;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
 }
-@keyframes spinner {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Dark Mode Overrides */
+.dark .card { background: #1f2937; border-color: #374151; }
+.dark .profile-header .title { color: #fff; }
+.dark .formal-control { background: #374151; border-color: #4b5563; color: #fff; }
+.dark .user-name { color: #fff; }
+.dark .academic-label { color: #fff; }
+.dark .academic-info-box { border-color: #374151; }
+.dark .formal-card .card-header { border-color: #374151; }
+.dark .formal-card .card-header h3 { color: #fff; }
 </style>

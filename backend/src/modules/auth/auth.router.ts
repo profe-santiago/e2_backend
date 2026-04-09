@@ -145,8 +145,7 @@ router.post('/logout', (req: Request, res: Response) => {
 router.put('/profile', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const userId = Number(req.user.id);
-    const { name, email } = req.body;
-    const result = await authService.updateProfile(userId, { name, email });
+    const result = await authService.updateProfile(userId, req.body);
     res.status(200).json(result);
   } catch (error) {
     next(error);
