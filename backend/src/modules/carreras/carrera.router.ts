@@ -3,12 +3,45 @@ import prisma from '../../utils/prisma';
 
 const router = Router();
 
-// GET all carreras
+// GET all carreras (paginated)
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const rawCarreras = await prisma.$queryRaw`SELECT * FROM carreras WHERE deleted_at IS NULL`;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+    const search = req.query.search ? `%${req.query.search}%` : null;
+
+    let rawCarreras;
+    let totalCountResult: any[];
+
+    if (search) {
+      rawCarreras = await prisma.$queryRaw`
+        SELECT * FROM carreras 
+        WHERE deleted_at IS NULL 
+        AND (nombre LIKE ${search} OR clave LIKE ${search})
+        ORDER BY nombre ASC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+      totalCountResult = await prisma.$queryRaw`
+        SELECT COUNT(*) as count FROM carreras 
+        WHERE deleted_at IS NULL 
+        AND (nombre LIKE ${search} OR clave LIKE ${search})
+      `;
+    } else {
+      rawCarreras = await prisma.$queryRaw`
+        SELECT * FROM carreras 
+        WHERE deleted_at IS NULL 
+        ORDER BY nombre ASC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+      totalCountResult = await prisma.$queryRaw`
+        SELECT COUNT(*) as count FROM carreras WHERE deleted_at IS NULL
+      `;
+    }
+
+    const total = Number(totalCountResult[0].count);
     
-    // Count participantes from users table where carrera matches the career name
+    // Count participantes from users table
     const usersCounts = await prisma.$queryRaw`SELECT carrera, COUNT(id) as count FROM users WHERE role = 'PARTICIPANTE' AND carrera IS NOT NULL GROUP BY carrera`;
     
     const countMap = new Map();
@@ -20,7 +53,15 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
       participantes_count: countMap.get(c.nombre) || 0
     }));
 
-    res.json({ data: serialized });
+    res.json({ 
+      data: serialized,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     next(error);
   }

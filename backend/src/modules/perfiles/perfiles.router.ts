@@ -3,17 +3,58 @@ import prisma from '../../utils/prisma';
 
 const router = Router();
 
-// GET all perfiles
+// GET all perfiles (paginated)
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const rawPerfiles = await prisma.$queryRaw`SELECT * FROM perfiles WHERE deleted_at IS NULL ORDER BY created_at DESC`;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+    const search = req.query.search ? `%${req.query.search}%` : null;
+
+    let rawPerfiles;
+    let totalCountResult: any[];
+
+    if (search) {
+      rawPerfiles = await prisma.$queryRaw`
+        SELECT * FROM perfiles 
+        WHERE deleted_at IS NULL 
+        AND nombre LIKE ${search}
+        ORDER BY created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+      totalCountResult = await prisma.$queryRaw`
+        SELECT COUNT(*) as count FROM perfiles 
+        WHERE deleted_at IS NULL 
+        AND nombre LIKE ${search}
+      `;
+    } else {
+      rawPerfiles = await prisma.$queryRaw`
+        SELECT * FROM perfiles 
+        WHERE deleted_at IS NULL 
+        ORDER BY created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+      totalCountResult = await prisma.$queryRaw`
+        SELECT COUNT(*) as count FROM perfiles WHERE deleted_at IS NULL
+      `;
+    }
+
+    const total = Number(totalCountResult[0].count);
 
     const serialized = (rawPerfiles as any[]).map((p: any) => ({
       ...p,
       id: Number(p.id)
     }));
 
-    res.json({ data: serialized });
+    res.json({ 
+      data: serialized,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     next(error);
   }
