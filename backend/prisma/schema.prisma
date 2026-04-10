@@ -27,6 +27,7 @@ model eventos {
   descripcion          String?                @db.Text
   fecha_inicio         DateTime
   fecha_fin            DateTime
+  max_jueces           Int                    @default(5)
   created_at           DateTime               @default(now())
   updated_at           DateTime
   certificados         certificados[]

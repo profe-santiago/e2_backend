@@ -4,12 +4,31 @@ import { RankingService } from './ranking.service';
 const rankingService = new RankingService();
 
 export class ResultadosService {
-  async getResultados(eventoIdQuery?: number) {
+  async getResultados(userId?: number, eventoIdQuery?: number) {
     let evento;
 
     if (eventoIdQuery) {
       evento = await prisma.eventos.findUnique({ where: { id: BigInt(eventoIdQuery) } });
-    } else {
+    } else if (userId) {
+      // Intentar encontrar el evento del usuario primero si es participante
+      const proyecto = await prisma.proyectos.findFirst({
+        where: {
+          equipos: {
+            equipo_miembros: {
+              some: { user_id: BigInt(userId) }
+            }
+          }
+        },
+        include: { eventos: true }
+      });
+
+      if (proyecto && proyecto.eventos) {
+        evento = proyecto.eventos;
+      }
+    }
+
+    if (!evento) {
+      // Si no tiene evento o no se especificó, tomar el más reciente global
       evento = await prisma.eventos.findFirst({
         orderBy: { created_at: 'desc' }
       });
@@ -26,13 +45,30 @@ export class ResultadosService {
 
     let ranking: any[] = [];
     let formattedEvento = null;
+    let isEnrolled = false;
+    let isFinished = false;
 
     if (evento) {
+      isFinished = new Date() > new Date(evento.fecha_fin);
       ranking = await rankingService.calcularRanking(Number(evento.id));
       formattedEvento = {
         ...evento,
         id: Number(evento.id)
       };
+
+      if (userId) {
+        const enrollment = await prisma.proyectos.findFirst({
+          where: {
+            evento_id: BigInt(evento.id),
+            equipos: {
+              equipo_miembros: {
+                some: { user_id: BigInt(userId) }
+              }
+            }
+          }
+        });
+        isEnrolled = !!enrollment;
+      }
     }
 
     return {
@@ -40,7 +76,10 @@ export class ResultadosService {
       data: {
         ranking,
         eventos,
-        evento: formattedEvento
+        evento: formattedEvento,
+        isEnrolled,
+        isFinished,
+        serverTime: new Date().toISOString()
       }
     };
   }

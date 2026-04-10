@@ -46,6 +46,18 @@ export class UserRepository {
     return prisma.users.findUnique({ where: { email } });
   }
 
+  async findByName(name: string) {
+    return prisma.users.findFirst({ where: { name } });
+  }
+
+  async findByPhone(telefono: string) {
+    return prisma.users.findFirst({ where: { telefono } });
+  }
+
+  async findByControlNumber(no_control: string) {
+    return prisma.users.findFirst({ where: { no_control } });
+  }
+
   async create(data: Omit<CreateUserDto, 'rol_id'> & { role?: string }) {
     return prisma.users.create({
       data: {

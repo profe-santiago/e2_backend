@@ -18,16 +18,23 @@ export class EquipoService {
       ...e,
       id: Number(e.id),
       proyectos: undefined,
-      proyecto: e.proyectos && e.proyectos.length > 0 ? {
-        ...e.proyectos[0],
-        id: Number(e.proyectos[0].id),
-        equipo_id: Number(e.proyectos[0].equipo_id),
-        evento_id: Number(e.proyectos[0].evento_id),
-        evento: e.proyectos[0].eventos ? {
-          ...e.proyectos[0].eventos,
-          id: Number(e.proyectos[0].eventos.id)
-        } : null,
-      } : null,
+      proyecto: (() => {
+        if (!e.proyectos || e.proyectos.length === 0) return null;
+        const p = options.evento_id 
+          ? e.proyectos.find((proj: any) => Number(proj.evento_id) === options.evento_id) || e.proyectos[0]
+          : e.proyectos[0];
+        
+        return {
+          ...p,
+          id: Number(p.id),
+          equipo_id: Number(p.equipo_id),
+          evento_id: Number(p.evento_id),
+          evento: p.eventos ? {
+            ...p.eventos,
+            id: Number(p.eventos.id)
+          } : null,
+        };
+      })(),
       participantes: e.equipo_miembros.map((em: any) => ({
         id: Number(em.users.id),
         user_id: Number(em.users.id),
@@ -124,6 +131,11 @@ export class EquipoService {
     const equipo = await equipoRepository.findById(equipoId);
     if (!equipo) throw { status: 404, message: 'Equipo no encontrado' };
 
+    // 0. Check capacity limit (Max 5 members)
+    if (equipo.equipo_miembros.length >= 5) {
+      throw { status: 400, message: 'El equipo ya ha alcanzado el límite máximo de 5 integrantes.' };
+    }
+
     // 1. Check if user is already in THIS team
     const isAlreadyMember = equipo.equipo_miembros.some(
       (em: any) => Number(em.user_id) === data.participante_id
@@ -162,7 +174,39 @@ export class EquipoService {
   }
 
   async removeMember(equipoId: number, userId: number) {
-    await equipoRepository.removeMiembro(equipoId, userId);
-    return { success: true, message: 'Miembro eliminado del equipo exitosamente.' };
+    const prisma = (await import('../../utils/prisma')).default;
+    
+    // Check if the member being removed is a LIDER
+    const membership = await prisma.equipo_miembros.findFirst({
+      where: { equipo_id: BigInt(equipoId), user_id: BigInt(userId) }
+    });
+
+    if (!membership) throw { status: 404, message: 'Miembro no encontrado en este equipo.' };
+
+    const isLider = membership.rol === 'LIDER';
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Remove the member
+      await tx.equipo_miembros.delete({
+        where: { id: membership.id }
+      });
+
+      // 2. If it was the leader, promote another one
+      if (isLider) {
+        const nextInLine = await tx.equipo_miembros.findFirst({
+          where: { equipo_id: BigInt(equipoId) },
+          orderBy: { created_at: 'asc' }
+        });
+
+        if (nextInLine) {
+          await tx.equipo_miembros.update({
+            where: { id: nextInLine.id },
+            data: { rol: 'LIDER' }
+          });
+        }
+      }
+    });
+
+    return { success: true, message: 'Miembro eliminado. El liderazgo ha sido actualizado automáticamente.' };
   }
 }

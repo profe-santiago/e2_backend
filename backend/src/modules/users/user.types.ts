@@ -3,6 +3,8 @@ export interface CreateUserDto {
   email: string;
   password?: string;
   rol_id: number;
+  telefono?: string;
+  no_control?: string;
 }
 
 export interface UpdateUserDto {

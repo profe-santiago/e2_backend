@@ -51,6 +51,7 @@ export const createEventoSchema = z.object({
     fecha_inicio: z.string().datetime({ message: 'Debe ser una fecha ISO válida' }),
     fecha_fin: z.string().datetime({ message: 'Debe ser una fecha ISO válida' }),
     jueces: z.array(z.number()).optional(),
+    max_jueces: z.number().int().positive().optional().default(5),
   }),
 });
 
@@ -61,5 +62,6 @@ export const updateEventoSchema = z.object({
     fecha_inicio: z.string().datetime().optional(),
     fecha_fin: z.string().datetime().optional(),
     jueces: z.array(z.number()).optional(),
+    max_jueces: z.number().int().positive().optional(),
   }),
 });

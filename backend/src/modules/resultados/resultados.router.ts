@@ -24,8 +24,9 @@ const resultadosService = new ResultadosService();
  */
 router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const eventoId = req.query.evento_id ? parseInt(req.query.evento_id as string, 10) : undefined;
-    const result = await resultadosService.getResultados(eventoId);
+    const eventoId = req.query.evento_id ? parseInt(req.query.evento_id as string) : undefined;
+    const userId = (req as any).user?.id;
+    const result = await resultadosService.getResultados(userId, eventoId);
     res.json(result);
   } catch (error) {
     next(error);

@@ -47,7 +47,18 @@ export class ProyectoRepository {
   }
 
   async create(data: CreateProyectoDto) {
-    return prisma.proyectos.create({
+    const existing = await prisma.proyectos.findFirst({
+      where: {
+        equipo_id: BigInt(data.equipo_id),
+        evento_id: BigInt(data.evento_id),
+      }
+    });
+
+    if (existing) {
+      throw { status: 400, message: 'Este equipo ya tiene un proyecto registrado en este evento.' };
+    }
+
+    const proyecto = await prisma.proyectos.create({
       data: {
         equipo_id: BigInt(data.equipo_id),
         evento_id: BigInt(data.evento_id),
@@ -58,6 +69,13 @@ export class ProyectoRepository {
         updated_at: new Date(),
       }
     });
+
+    return {
+      ...proyecto,
+      id: Number(proyecto.id),
+      equipo_id: Number(proyecto.equipo_id),
+      evento_id: Number(proyecto.evento_id),
+    };
   }
 
   async update(id: number, data: UpdateProyectoDto) {

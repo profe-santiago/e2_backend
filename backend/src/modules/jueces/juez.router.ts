@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { JuezService } from './juez.service';
-import { storeEvaluacionSchema } from './juez.schema';
+import { storeEvaluacionSchema, createCriterioSchema, updateCriterioSchema } from './juez.schema';
 import { authMiddleware, AuthRequest } from '../../middlewares/auth.middleware';
 
 const router = Router();
@@ -129,5 +129,37 @@ router.post('/evaluacion/:proyectoId', authMiddleware, validate(storeEvaluacionS
     next(error);
   }
 });
+
+// Gestión de Criterios (DESACTIVADO: Ahora lo gestiona el Admin)
+/*
+router.post('/criterios', authMiddleware, validate(createCriterioSchema), async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const result = await juezService.createCriterio(req.body);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put('/criterios/:id', authMiddleware, validate(updateCriterioSchema), async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const id = parseInt(req.params.id as string, 10);
+    const result = await juezService.updateCriterio(id, req.body);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete('/criterios/:id', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const id = parseInt(req.params.id as string, 10);
+    const result = await juezService.deleteCriterio(id);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+*/
 
 export const juezRouter = router;

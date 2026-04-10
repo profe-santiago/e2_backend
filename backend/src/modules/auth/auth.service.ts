@@ -75,6 +75,11 @@ export class AuthService {
       throw { status: 400, message: 'El email ya está registrado' };
     }
 
+    const existingName = await prisma.users.findFirst({ where: { name: data.name } });
+    if (existingName) {
+      throw { status: 400, message: 'El nombre ya está en uso' };
+    }
+
     const hashedPassword = await bcrypt.hash(data.password, 12);
 
     const user = await authRepository.createUser({
@@ -186,11 +191,34 @@ export class AuthService {
       throw { status: 404, message: 'Usuario no encontrado' };
     }
 
-    // Check if email is already taken by another user
+    // Uniqueness checks
     if (data.email && data.email !== user.email) {
       const existing = await authRepository.findUserByEmail(data.email);
       if (existing && Number(existing.id) !== userId) {
         throw { status: 400, message: 'El email ya está en uso por otro usuario' };
+      }
+    }
+
+    if (data.name && data.name !== user.name) {
+      const existingName = await prisma.users.findFirst({ where: { name: data.name } });
+      if (existingName && Number(existingName.id) !== userId) {
+        throw { status: 400, message: 'El nombre ya está en uso por otro usuario' };
+      }
+    }
+
+    const telefono = (data as any).telefono;
+    if (telefono && telefono !== user.telefono) {
+      const existingPhone = await prisma.users.findFirst({ where: { telefono } });
+      if (existingPhone && Number(existingPhone.id) !== userId) {
+        throw { status: 400, message: 'El número de teléfono ya está en uso por otro usuario' };
+      }
+    }
+
+    const no_control = (data as any).no_control;
+    if (no_control && no_control !== user.no_control) {
+      const existingControl = await prisma.users.findFirst({ where: { no_control } });
+      if (existingControl && Number(existingControl.id) !== userId) {
+        throw { status: 400, message: 'El número de control ya está en uso por otro usuario' };
       }
     }
 

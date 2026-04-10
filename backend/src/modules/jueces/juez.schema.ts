@@ -24,3 +24,18 @@ export const storeEvaluacionSchema = z.object({
     comentario: z.string().optional()
   })
 });
+
+export const createCriterioSchema = z.object({
+  body: z.object({
+    evento_id: z.number(),
+    nombre: z.string().min(1),
+    ponderacion: z.number().min(1).max(100)
+  })
+});
+
+export const updateCriterioSchema = z.object({
+  body: z.object({
+    nombre: z.string().min(1).optional(),
+    ponderacion: z.number().min(1).max(100).optional()
+  })
+});

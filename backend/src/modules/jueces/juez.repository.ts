@@ -51,15 +51,53 @@ export class JuezRepository {
         evaluacion_criterios: true,
         proyectos: {
           include: {
-            equipos: true,
-            evaluaciones: {
-              where: { juez_id: BigInt(juezId) }
-            }
+            equipos: {
+              include: {
+                equipo_miembros: true
+              }
+            },
+            evaluaciones: true // Traer todas para calcular ranking global si es necesario
           }
         }
       }
     });
-    return evento;
+
+    if (!evento) return null;
+
+    // Filter evaluations for the specific judge for status check
+    const formattedProyectos = evento.proyectos.map(p => {
+      const myEvals = p.evaluaciones.filter(e => e.juez_id === BigInt(juezId));
+      const totalScore = p.evaluaciones.reduce((acc, e) => acc + Number(e.puntuacion), 0);
+      
+      return {
+        ...p,
+        id: Number(p.id),
+        equipo_id: Number(p.equipo_id),
+        evento_id: Number(p.evento_id),
+        equipo: p.equipos ? {
+          ...p.equipos,
+          id: Number(p.equipos.id),
+          miembros_count: p.equipos.equipo_miembros.length
+        } : null,
+        yaCalificado: myEvals.length > 0,
+        totalScore // Para ranking
+      };
+    });
+
+    return {
+      id: Number(evento.id),
+      nombre: evento.nombre,
+      descripcion: evento.descripcion,
+      fecha_inicio: evento.fecha_inicio,
+      fecha_fin: evento.fecha_fin,
+      proyectos: formattedProyectos,
+      evaluacion_criterios: evento.evaluacion_criterios.map(c => ({
+        ...c,
+        id: Number(c.id),
+        evento_id: Number(c.evento_id),
+        ponderacion: Number(c.ponderacion)
+      }))
+    };
   }
 
   async getEvaluacionData(proyectoId: number, juezId: number) {
@@ -93,8 +131,9 @@ export class JuezRepository {
     const comentarioEval = proyecto.evaluaciones.find((e: any) => e.comentario);
 
     const calificacionesPrevias: Record<string, number> = {};
-    proyecto.evaluaciones.forEach((c: any) => {
-      calificacionesPrevias[c.criterio_id.toString()] = Number(c.puntuacion);
+    proyecto.evaluaciones.forEach((e: any) => {
+      // Return raw score (0-100) exactly as stored
+      calificacionesPrevias[e.criterio_id.toString()] = Number(e.puntuacion);
     });
 
     return {
@@ -123,13 +162,51 @@ export class JuezRepository {
   }
 
   async storeEvaluacion(proyectoId: number, juezId: number, dto: StoreEvaluacionDto) {
-    const proyecto = await prisma.proyectos.findUnique({ where: { id: BigInt(proyectoId) }});
+    const proyecto = await prisma.proyectos.findUnique({ 
+      where: { id: BigInt(proyectoId) },
+      include: { eventos: { include: { evaluacion_criterios: true } } }
+    });
     if (!proyecto) throw { status: 404, message: 'Proyecto no encontrado' };
 
+    // Verificar si el evento ha finalizado
+    const now = new Date();
+    if (proyecto.eventos && now > proyecto.eventos.fecha_fin) {
+      throw { 
+        status: 403, 
+        message: 'El periodo de evaluación para este evento ha finalizado. Los cambios no se han guardado.' 
+      };
+    }
+
     const ops: any[] = [];
+    const comentario = dto.comentario || '';
+
+    // Si no se pasaron puntuaciones, al menos guardamos el comentario en las existentes
+    if (!dto.puntuaciones || Object.keys(dto.puntuaciones).length === 0) {
+      await prisma.evaluaciones.updateMany({
+        where: { proyecto_id: BigInt(proyectoId), juez_id: BigInt(juezId) },
+        data: { comentario, created_at: new Date() }
+      });
+      return;
+    }
 
     for (const [criterioIdStr, puntuacion] of Object.entries(dto.puntuaciones)) {
       const criterioId = parseInt(criterioIdStr, 10);
+      const now = new Date();
+      
+      const criterion = proyecto.eventos.evaluacion_criterios.find(c => Number(c.id) === criterioId);
+      if (!criterion) throw { status: 400, message: `Criterio ${criterioId} no válido para este evento.` };
+      
+      const weight = Number(criterion.ponderacion);
+      const inputScore = Number(puntuacion);
+
+      // Now we allow 0-100 range for everything
+      if (inputScore < 0 || inputScore > 100) {
+        throw { 
+          status: 400, 
+          message: `La puntuación para "${criterion.nombre}" (${inputScore}) debe estar entre 0 y 100.` 
+        };
+      }
+
       const existingEval = await prisma.evaluaciones.findFirst({
         where: {
           proyecto_id: BigInt(proyectoId),
@@ -138,12 +215,10 @@ export class JuezRepository {
         }
       });
 
-      const comentario = dto.comentario || undefined;
-
       if (existingEval) {
         ops.push(prisma.evaluaciones.update({
           where: { id: existingEval.id },
-          data: { puntuacion: puntuacion as any, comentario }
+          data: { puntuacion: inputScore as any, comentario, created_at: now }
         }));
       } else {
         ops.push(prisma.evaluaciones.create({
@@ -151,8 +226,9 @@ export class JuezRepository {
             proyecto_id: BigInt(proyectoId),
             juez_id: BigInt(juezId),
             criterio_id: BigInt(criterioId),
-            puntuacion: puntuacion as any,
-            comentario
+            puntuacion: inputScore as any,
+            comentario,
+            created_at: now
           }
         }));
       }

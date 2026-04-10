@@ -37,6 +37,7 @@ export class EventoRepository {
         descripcion: data.descripcion,
         fecha_inicio: new Date(data.fecha_inicio),
         fecha_fin: new Date(data.fecha_fin),
+        max_jueces: data.max_jueces || 5,
         created_at: new Date(),
         updated_at: new Date(),
       },
@@ -49,6 +50,7 @@ export class EventoRepository {
     if (data.descripcion !== undefined) updateData.descripcion = data.descripcion;
     if (data.fecha_inicio) updateData.fecha_inicio = new Date(data.fecha_inicio);
     if (data.fecha_fin) updateData.fecha_fin = new Date(data.fecha_fin);
+    if (data.max_jueces !== undefined) updateData.max_jueces = data.max_jueces;
 
     return prisma.eventos.update({
       where: { id: BigInt(id) },
@@ -84,5 +86,25 @@ export class EventoRepository {
       select: { id: true, name: true, email: true }
     });
     return jueces;
+  }
+
+  async addJuez(eventoId: number, userId: number) {
+    return prisma.evento_jueces.create({
+      data: {
+        evento_id: BigInt(eventoId),
+        user_id: BigInt(userId),
+      },
+    });
+  }
+
+  async removeJuez(eventoId: number, userId: number) {
+    return prisma.evento_jueces.delete({
+      where: {
+        evento_id_user_id: {
+          evento_id: BigInt(eventoId),
+          user_id: BigInt(userId),
+        },
+      },
+    });
   }
 }

@@ -226,4 +226,40 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response, ne
   }
 });
 
+/**
+ * @openapi
+ * /api/admin/eventos/{id}/jueces:
+ *   post:
+ *     summary: Asignar un juez a un evento
+ *     tags: [Eventos]
+ */
+router.post('/:id/jueces', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const eventoId = parseInt(req.params.id as string, 10);
+    const { userId } = req.body;
+    const result = await eventoService.addJuezToEvento(eventoId, userId);
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @openapi
+ * /api/admin/eventos/{id}/jueces/{juezId}:
+ *   delete:
+ *     summary: Remover un juez de un evento
+ *     tags: [Eventos]
+ */
+router.delete('/:id/jueces/:juezId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const eventoId = parseInt(req.params.id as string, 10);
+    const juezId = parseInt(req.params.juezId as string, 10);
+    const result = await eventoService.removeJuezFromEvento(eventoId, juezId);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 export const eventoRouter = router;

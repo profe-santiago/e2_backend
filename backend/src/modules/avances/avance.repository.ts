@@ -38,5 +38,15 @@ export class AvanceRepository {
   async destroy(id: number) {
     return prisma.proyecto_avances.delete({ where: { id: BigInt(id) } });
   }
+
+  async update(id: number, descripcion: string, fecha?: Date) {
+    return prisma.proyecto_avances.update({
+      where: { id: BigInt(id) },
+      data: { 
+        descripcion,
+        ...(fecha && { fecha })
+      }
+    });
+  }
 }
 

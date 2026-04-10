@@ -10,48 +10,11 @@ export class JuezService {
   }
 
   async getEvento(eventoId: number, juezId: number) {
-    const evento = await juezRepository.getEvento(eventoId, juezId);
-    if (!evento) throw { status: 404, message: 'Evento no encontrado' };
-
-    const formatEvento = {
-      ...evento,
-      id: Number(evento.id),
-      criterios: evento.evaluacion_criterios.map((c: any) => ({
-        ...c,
-        id: Number(c.id),
-        evento_id: Number(c.evento_id)
-      })),
-      proyectos: evento.proyectos.map((p: any) => ({
-        ...p,
-        id: Number(p.id),
-        equipo_id: Number(p.equipo_id),
-        evento_id: Number(p.evento_id),
-        equipo: p.equipos ? {
-          ...p.equipos,
-          id: Number(p.equipos.id)
-        } : null,
-        evaluaciones: p.evaluaciones.map((cal: any) => ({
-          ...cal,
-          id: Number(cal.id),
-          proyecto_id: Number(cal.proyecto_id),
-          juez_id: Number(cal.juez_id),
-          criterio_id: Number(cal.criterio_id),
-          puntuacion: Number(cal.puntuacion)
-        })),
-        // Frontend compatibility
-        calificaciones: p.evaluaciones.map((cal: any) => ({
-          ...cal,
-          id: Number(cal.id),
-          proyecto_id: Number(cal.proyecto_id),
-          juez_user_id: Number(cal.juez_id),
-          criterio_id: Number(cal.criterio_id),
-          puntuacion: Number(cal.puntuacion)
-        }))
-      }))
-    };
-
-    return { success: true, data: formatEvento };
+    const data = await juezRepository.getEvento(eventoId, juezId);
+    if (!data) throw { status: 404, message: 'Evento no encontrado' };
+    return { success: true, data };
   }
+
 
   async getEvaluacionData(proyectoId: number, juezId: number) {
     const data = await juezRepository.getEvaluacionData(proyectoId, juezId);

@@ -47,4 +47,22 @@ export class AvanceService {
     await avanceRepository.destroy(id);
     return { success: true, message: 'Avance eliminado.' };
   }
+
+  async updateAvance(id: number, dto: StoreAvanceDto) {
+    const avance = await avanceRepository.findById(id);
+    if (!avance) throw { status: 404, message: 'Avance no encontrado' };
+
+    // Se actualiza automáticamente a la hora actual al editar
+    const now = new Date();
+    const updated = await avanceRepository.update(id, dto.descripcion, now);
+    return {
+      success: true,
+      message: 'Avance actualizado.',
+      data: {
+        ...updated,
+        id: Number(updated.id),
+        proyecto_id: Number(updated.proyecto_id)
+      }
+    };
+  }
 }

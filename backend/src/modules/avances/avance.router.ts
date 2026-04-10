@@ -93,4 +93,38 @@ router.delete('/:id', authMiddleware, async (req: Request, res: Response, next: 
   }
 });
 
+/**
+ * @openapi
+ * /api/participante/avances/{id}:
+ *   put:
+ *     summary: Actualiza un avance de la bitácora por ID
+ *     tags: [Avances]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/StoreAvanceInput'
+ *     responses:
+ *       200:
+ *         description: Avance actualizado satisfactoriamente
+ */
+router.put('/:id', authMiddleware, validate(storeAvanceSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = parseInt(req.params.id as string, 10);
+    const result = await avanceService.updateAvance(id, req.body);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 export const avanceRouter = router;

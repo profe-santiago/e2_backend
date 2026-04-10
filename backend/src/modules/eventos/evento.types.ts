@@ -4,6 +4,7 @@ export interface CreateEventoDto {
   fecha_inicio: string;
   fecha_fin: string;
   jueces?: number[];
+  max_jueces?: number;
 }
 
 export interface UpdateEventoDto {
@@ -12,6 +13,7 @@ export interface UpdateEventoDto {
   fecha_inicio?: string;
   fecha_fin?: string;
   jueces?: number[];
+  max_jueces?: number;
 }
 
 export interface EventoQueryOptions {

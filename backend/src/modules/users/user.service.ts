@@ -73,6 +73,21 @@ export class UserService {
       throw { status: 400, message: 'El email ya está registrado' };
     }
 
+    if (data.nombre) {
+      const existingName = await userRepository.findByName(data.nombre);
+      if (existingName) throw { status: 400, message: 'El nombre de usuario ya está registrado' };
+    }
+
+    if (data.telefono) {
+      const existingPhone = await userRepository.findByPhone(data.telefono);
+      if (existingPhone) throw { status: 400, message: 'El número de teléfono ya está registrado' };
+    }
+
+    if (data.no_control) {
+      const existingControl = await userRepository.findByControlNumber(data.no_control);
+      if (existingControl) throw { status: 400, message: 'El número de control ya está registrado' };
+    }
+
     const hashedPassword = await bcrypt.hash(data.password!, 12);
     const role = ROLE_ID_MAP[data.rol_id] || 'PARTICIPANTE';
     
@@ -109,9 +124,30 @@ export class UserService {
     };
   }
 
-  async updateUser(id: number, data: UpdateUserDto) {
+  async updateUser(id: number, data: UpdateUserDto, requesterId?: number) {
     const user = await userRepository.findById(id);
     if (!user) throw { status: 404, message: 'Usuario no encontrado' };
+
+    // Uniqueness checks
+    if (data.email && data.email !== user.email) {
+      const existing = await userRepository.findByEmail(data.email);
+      if (existing) throw { status: 400, message: 'El email ya está en uso' };
+    }
+
+    if (data.nombre && data.nombre !== user.name) {
+      const existing = await userRepository.findByName(data.nombre);
+      if (existing) throw { status: 400, message: 'El nombre ya está en uso' };
+    }
+
+    if (data.telefono && data.telefono !== user.telefono) {
+      const existing = await userRepository.findByPhone(data.telefono);
+      if (existing) throw { status: 400, message: 'El teléfono ya está en uso' };
+    }
+
+    if (data.no_control && data.no_control !== user.no_control) {
+      const existing = await userRepository.findByControlNumber(data.no_control);
+      if (existing) throw { status: 400, message: 'El número de control ya está en uso' };
+    }
 
     let hashedPassword = data.password;
     if (hashedPassword) {
@@ -128,8 +164,13 @@ export class UserService {
     });
 
     if (data.rol_id) {
-      const role = ROLE_ID_MAP[data.rol_id] || 'PARTICIPANTE';
-      await userRepository.setRole(id, role);
+      // Security check: Don't allow changing own role to prevent self-lockout
+      if (requesterId && id === Number(requesterId)) {
+        // We skip role update for self, but update other fields
+      } else {
+        const role = ROLE_ID_MAP[data.rol_id] || 'PARTICIPANTE';
+        await userRepository.setRole(id, role);
+      }
     }
 
     return { success: true, message: 'Usuario actualizado correctamente.' };

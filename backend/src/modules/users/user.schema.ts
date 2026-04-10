@@ -51,7 +51,10 @@ export const updateUserSchema = z.object({
     password: z.string().min(6).optional(),
     rol_id: z.number().positive().optional(),
     telefono: z.string().optional(),
-    no_control: z.string().optional(),
+    no_control: z.string()
+      .length(8, 'El número de control debe tener exactamente 8 caracteres')
+      .regex(/^[a-zA-Z0-9]+$/, 'El número de control solo puede contener letras y números')
+      .optional(),
     carrera: z.string().optional(),
   }),
 });

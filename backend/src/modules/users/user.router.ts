@@ -254,7 +254,8 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response, next: Nex
 router.put('/:id', authMiddleware, validate(updateUserSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = parseInt(req.params.id as string, 10);
-    const result = await userService.updateUser(id, req.body);
+    const requesterId = (req as any).user?.id;
+    const result = await userService.updateUser(id, req.body, requesterId);
     res.json(result);
   } catch (error) {
     next(error);

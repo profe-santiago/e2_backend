@@ -14,7 +14,7 @@ export class EquipoRepository {
     if (search) {
       where.nombre = { contains: search };
     }
-    if (evento_id) {
+    if (evento_id !== undefined) {
       where.proyectos = { some: { evento_id: BigInt(evento_id) } };
     }
 
@@ -24,6 +24,7 @@ export class EquipoRepository {
         where,
         include: {
           proyectos: {
+            where: evento_id !== undefined ? { evento_id: BigInt(evento_id) } : undefined,
             include: { eventos: true },
           },
           equipo_miembros: {

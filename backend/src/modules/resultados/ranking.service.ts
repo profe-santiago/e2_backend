@@ -21,25 +21,31 @@ export class RankingService {
     });
 
     const ranking = proyectos.map((proyecto: any) => {
-      let totalPuntos = 0;
+      const scoresPerJudge: Record<string, Record<string, number>> = {};
+      const judgesThatRated = new Set<string>();
 
-      const calificacionesPorCriterio: Record<string, number[]> = {};
       proyecto.evaluaciones.forEach((cal: any) => {
+        const juezId = cal.juez_id.toString();
         const critId = cal.criterio_id.toString();
-        if (!calificacionesPorCriterio[critId]) {
-          calificacionesPorCriterio[critId] = [];
-        }
-        calificacionesPorCriterio[critId].push(Number(cal.puntuacion));
+        judgesThatRated.add(juezId);
+
+        if (!scoresPerJudge[juezId]) scoresPerJudge[juezId] = {};
+        scoresPerJudge[juezId][critId] = Number(cal.puntuacion);
       });
 
-      criterios.forEach((criterio: any) => {
-        const notas = calificacionesPorCriterio[criterio.id.toString()];
-        if (notas && notas.length > 0) {
-          const promedio = notas.reduce((a: number, b: number) => a + b, 0) / notas.length;
-          const puntosReales = (promedio * Number(criterio.ponderacion)) / 100;
-          totalPuntos += puntosReales;
+      let totalPuntos = 0;
+      if (judgesThatRated.size > 0) {
+        let sumWeightedTotals = 0;
+        for (const jId of judgesThatRated) {
+          let judgeWeightedTotal = 0;
+          criterios.forEach((criterio: any) => {
+            const score = scoresPerJudge[jId][criterio.id.toString()] || 0;
+            judgeWeightedTotal += (score * Number(criterio.ponderacion)) / 100;
+          });
+          sumWeightedTotals += judgeWeightedTotal;
         }
-      });
+        totalPuntos = sumWeightedTotals / judgesThatRated.size;
+      }
 
       const integrantes = proyecto.equipos?.equipo_miembros?.map((m: any) => ({
         id: Number(m.users.id),
@@ -76,32 +82,50 @@ export class RankingService {
 
     const chartLabels: string[] = [];
     const chartData: number[] = [];
-    let puntajeTotal = 0;
+    const scoresPerJudge: Record<string, Record<string, number>> = {};
+    const judgesThatRated = new Set<string>();
 
-    const calificacionesPorCriterio: Record<string, number[]> = {};
     (proyecto as any).evaluaciones.forEach((cal: any) => {
+      const juezId = cal.juez_id.toString();
       const critId = cal.criterio_id.toString();
-      if (!calificacionesPorCriterio[critId]) {
-        calificacionesPorCriterio[critId] = [];
-      }
-      calificacionesPorCriterio[critId].push(Number(cal.puntuacion));
+      judgesThatRated.add(juezId);
+      if (!scoresPerJudge[juezId]) scoresPerJudge[juezId] = {};
+      scoresPerJudge[juezId][critId] = Number(cal.puntuacion);
     });
 
     criterios.forEach((criterio: any) => {
       chartLabels.push(criterio.nombre);
-      const notas = calificacionesPorCriterio[criterio.id.toString()];
-      const promedio = (notas && notas.length > 0)
-        ? notas.reduce((a: number, b: number) => a + b, 0) / notas.length
-        : 0;
-
-      chartData.push(Math.round(promedio * 10) / 10);
-      puntajeTotal += (promedio * Number(criterio.ponderacion)) / 100;
+      let sumCrit = 0;
+      let countCrit = 0;
+      for (const jId of judgesThatRated) {
+        const s = scoresPerJudge[jId][criterio.id.toString()];
+        if (s !== undefined) {
+          sumCrit += s;
+          countCrit++;
+        }
+      }
+      const avgCrit = countCrit > 0 ? sumCrit / countCrit : 0;
+      chartData.push(Math.round(avgCrit * 10) / 10);
     });
+
+    let totalPuntos = 0;
+    if (judgesThatRated.size > 0) {
+      let sumWeightedTotals = 0;
+      for (const jId of judgesThatRated) {
+        let judgeWeightedTotal = 0;
+        criterios.forEach((criterio: any) => {
+          const score = scoresPerJudge[jId][criterio.id.toString()] || 0;
+          judgeWeightedTotal += (score * Number(criterio.ponderacion)) / 100;
+        });
+        sumWeightedTotals += judgeWeightedTotal;
+      }
+      totalPuntos = sumWeightedTotals / judgesThatRated.size;
+    }
 
     return { 
       chartLabels, 
       chartData, 
-      puntajeTotal: Math.round(puntajeTotal * 100) / 100 
+      puntajeTotal: Math.round(totalPuntos * 100) / 100 
     };
   }
 

@@ -26,13 +26,17 @@ export class CriterioService {
   }
 
   async createCriterio(data: CreateCriterioDto) {
+    if (Number(data.ponderacion) <= 0) {
+      throw { status: 400, message: 'La ponderación debe ser un número positivo.' };
+    }
+
     // Validate 100% cap
     const existingCriterios = await prisma.evaluacion_criterios.findMany({
       where: { evento_id: BigInt(data.evento_id) }
     });
     const sumaActual = existingCriterios.reduce((sum: number, c: any) => sum + Number(c.ponderacion), 0);
     if (sumaActual + Number(data.ponderacion) > 100) {
-      throw { status: 400, message: `Solo quedan ${100 - sumaActual}% disponibles para asignar.` };
+      throw { status: 400, message: `La suma total no puede exceder el 100%. Solo quedan ${100 - sumaActual}% disponibles.` };
     }
 
     const criterio = await criterioRepository.create(data);
@@ -54,16 +58,21 @@ export class CriterioService {
       throw { status: 404, message: 'Criterio no encontrado' };
     }
 
-    // Validate 100% cap (exclude self)
     if (data.ponderacion !== undefined) {
+      if (Number(data.ponderacion) <= 0) {
+        throw { status: 400, message: 'La ponderación debe ser un número positivo.' };
+      }
+
+      // Validate 100% cap (exclude self)
       const existingCriterios = await prisma.evaluacion_criterios.findMany({
         where: { evento_id: (criterio as any).evento_id }
       });
       const sumaOtros = existingCriterios
         .filter((c: any) => Number(c.id) !== id)
         .reduce((sum: number, c: any) => sum + Number(c.ponderacion), 0);
+      
       if (sumaOtros + Number(data.ponderacion) > 100) {
-        throw { status: 400, message: `Solo quedan ${100 - sumaOtros}% disponibles (excluyendo este criterio).` };
+        throw { status: 400, message: `La suma total no puede exceder el 100%. Solo quedan ${100 - sumaOtros}% disponibles.` };
       }
     }
 

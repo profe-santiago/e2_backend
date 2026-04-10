@@ -17,6 +17,7 @@ async function main() {
         descripcion: 'Competencia de desarrollo de software en equipos multidisciplinarios. Los participantes tendrán 48 horas para crear soluciones innovadoras.',
         fecha_inicio: new Date('2026-04-10T08:00:00'),
         fecha_fin: new Date('2026-04-12T20:00:00'),
+        max_jueces: 5,
         updated_at: new Date()
       }
     }),
@@ -26,6 +27,7 @@ async function main() {
         descripcion: 'Exhibición de proyectos tecnológicos desarrollados durante el semestre. Abierto al público general y evaluado por jueces externos.',
         fecha_inicio: new Date('2026-05-15T09:00:00'),
         fecha_fin: new Date('2026-05-17T18:00:00'),
+        max_jueces: 5,
         updated_at: new Date()
       }
     }),
@@ -35,6 +37,7 @@ async function main() {
         descripcion: 'Competencia internacional de innovación donde equipos resuelven retos reales de la industria en 28 horas continuas.',
         fecha_inicio: new Date('2026-06-20T07:00:00'),
         fecha_fin: new Date('2026-06-21T11:00:00'),
+        max_jueces: 5,
         updated_at: new Date()
       }
     }),
@@ -44,6 +47,7 @@ async function main() {
         descripcion: 'Presentación de proyectos de investigación y desarrollo tecnológico del Tecnológico Nacional de México.',
         fecha_inicio: new Date('2026-03-01T10:00:00'),
         fecha_fin: new Date('2026-03-03T17:00:00'),
+        max_jueces: 5,
         updated_at: new Date()
       }
     }),
@@ -53,6 +57,7 @@ async function main() {
         descripcion: 'Competencia de programación competitiva con problemas de algoritmia y estructura de datos.',
         fecha_inicio: new Date('2026-04-01T14:00:00'),
         fecha_fin: new Date('2026-04-06T23:59:00'),
+        max_jueces: 5,
         updated_at: new Date()
       }
     }),
@@ -62,6 +67,7 @@ async function main() {
         descripcion: 'Exposición de proyectos de emprendimiento tecnológico para búsqueda de inversión.',
         fecha_inicio: new Date('2026-08-10T09:00:00'),
         fecha_fin: new Date('2026-08-11T16:00:00'),
+        max_jueces: 5,
         updated_at: new Date()
       }
     }),
@@ -71,6 +77,7 @@ async function main() {
         descripcion: 'Competencia nacional de robots resuelve laberintos y seguidores de línea.',
         fecha_inicio: new Date('2026-09-05T08:00:00'),
         fecha_fin: new Date('2026-09-07T18:00:00'),
+        max_jueces: 5,
         updated_at: new Date()
       }
     }),
@@ -80,6 +87,7 @@ async function main() {
         descripcion: 'Ciclo de conferencias y presentación de proyectos sobre aprendizaje profundo y redes neuronales.',
         fecha_inicio: new Date('2026-10-12T10:00:00'),
         fecha_fin: new Date('2026-10-14T17:00:00'),
+        max_jueces: 5,
         updated_at: new Date()
       }
     }),
@@ -89,6 +97,7 @@ async function main() {
         descripcion: 'Desarrollo de software enfocado a la mejora y el cuidado del medio ambiente local.',
         fecha_inicio: new Date('2026-11-20T08:00:00'),
         fecha_fin: new Date('2026-11-22T20:00:00'),
+        max_jueces: 5,
         updated_at: new Date()
       }
     }),
@@ -98,6 +107,7 @@ async function main() {
         descripcion: 'Retos de captura la bandera (CTF) y auditorías de seguridad web en tiempo real.',
         fecha_inicio: new Date('2026-12-01T09:00:00'),
         fecha_fin: new Date('2026-12-02T19:00:00'),
+        max_jueces: 10,
         updated_at: new Date()
       }
     }),
@@ -107,6 +117,7 @@ async function main() {
         descripcion: 'Competencia universitaria de desarrollo de motores gráficos y videojuegos indie.',
         fecha_inicio: new Date('2027-01-15T10:00:00'),
         fecha_fin: new Date('2027-01-17T18:00:00'),
+        max_jueces: 5,
         updated_at: new Date()
       }
     }),
@@ -116,6 +127,7 @@ async function main() {
         descripcion: 'Presentación de experiencias y mundos virtuales creados por estudiantes de últimos semestres.',
         fecha_inicio: new Date('2027-02-20T08:00:00'),
         fecha_fin: new Date('2027-02-21T18:00:00'),
+        max_jueces: 5,
         updated_at: new Date()
       }
     }),
@@ -276,6 +288,41 @@ async function main() {
   // ─── PARTICIPANTES (20 alumnos) ───
   const bcrypt = require('bcryptjs')
   const hashedPass = await bcrypt.hash('password123', 10)
+  const hashedJudgePass = await bcrypt.hash('password', 10) // "password" for judges
+
+  // ─── JUECES (15 jueces) ───
+  const juecesData = [
+    { name: 'Dr. Roberto Méndez', email: 'roberto.mendez@juez.com' },
+    { name: 'Dra. Elena Villalobos', email: 'elena.villalobos@juez.com' },
+    { name: 'Ing. Arturo Peniche', email: 'arturo.peniche@juez.com' },
+    { name: 'Mtra. Lucía Sodi', email: 'lucia.sodi@juez.com' },
+    { name: 'Dr. Guillermo del Toro', email: 'guillermo.toro@juez.com' },
+    { name: 'Ing. Sandra Bullock', email: 'sandra.bullock@juez.com' },
+    { name: 'Mtro. Javier Alatorre', email: 'javier.alatorre@juez.com' },
+    { name: 'Dra. Carmen Aristegui', email: 'carmen.aristegui@juez.com' },
+    { name: 'Ing. Carlos Slim', email: 'carlos.slim@juez.com' },
+    { name: 'Mtra. Frida Kahlo', email: 'frida.kahlo@juez.com' },
+    { name: 'Dr. Diego Rivera', email: 'diego.rivera@juez.com' },
+    { name: 'Ing. Katya Echazarreta', email: 'katya.e@juez.com' },
+    { name: 'Mtro. Octavio Paz', email: 'octavio.paz@juez.com' },
+    { name: 'Dra. Julieta Fierro', email: 'julieta.fierro@juez.com' },
+    { name: 'Ing. Mario Molina', email: 'mario.molina@juez.com' }
+  ]
+
+  for (const j of juecesData) {
+    await prisma.users.upsert({
+      where: { email: j.email },
+      update: { password: hashedJudgePass, role: 'JUEZ', updated_at: new Date() },
+      create: {
+        name: j.name,
+        email: j.email,
+        password: hashedJudgePass,
+        role: 'JUEZ',
+        updated_at: new Date()
+      }
+    })
+  }
+  console.log('✅ 15 jueces creados/actualizados con contraseña "password"')
 
   const participantesData = [
     { name: 'Carlos Hernández López', email: 'carlos.hernandez@tecmx.edu', carrera: 'Ingeniería en Sistemas Computacionales', no_control: '20260101' },

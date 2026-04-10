@@ -27,7 +27,9 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response,
     let puntajeTotal = 0;
     let chartLabels: string[] = [];
     let chartData: number[] = [];
+    let comentarios: string[] = [];
     let evento_inscrito: any = null;
+    let constancias: any = { individual: false, equipo: false };
 
     // 2. Find team via equipo_miembros
     const membership = await prisma.equipo_miembros.findFirst({
@@ -68,32 +70,87 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response,
           evento_id: Number(proyectoData.evento_id)
         };
 
-        // 5. Get scores by criteria
+        // 5. Get scores by criteria and comments (Weighted Calculation)
+        const criteriosEventos = await prisma.evaluacion_criterios.findMany({
+          where: { evento_id: BigInt(proyectoData.evento_id) }
+        });
+
         const evaluaciones = await prisma.evaluaciones.findMany({
           where: { proyecto_id: proyectoData.id },
-          include: { evaluacion_criterios: true }
+          include: { users: { select: { name: true } } }
         });
 
-        const scoresByCriteria: Record<string, { sum: number; count: number }> = {};
+        const judgeComments: Record<string, { juez: string, texto: string, fecha: Date }> = {};
+        const scoresPerJudge: Record<string, Record<string, number>> = {};
+        const judgesThatRated = new Set<string>();
+
         for (const ev of evaluaciones) {
-          const nombre = ev.evaluacion_criterios?.nombre || 'Criterio';
-          if (!scoresByCriteria[nombre]) {
-            scoresByCriteria[nombre] = { sum: 0, count: 0 };
+          const juezId = ev.juez_id.toString();
+          const critId = ev.criterio_id.toString();
+          judgesThatRated.add(juezId);
+
+          if (!scoresPerJudge[juezId]) scoresPerJudge[juezId] = {};
+          scoresPerJudge[juezId][critId] = Number(ev.puntuacion);
+
+          if (ev.comentario) {
+            const existing = judgeComments[juezId];
+            if (!existing || ev.created_at > existing.fecha) {
+              judgeComments[juezId] = {
+                juez: ev.users.name,
+                texto: ev.comentario,
+                fecha: ev.created_at
+              };
+            }
           }
-          scoresByCriteria[nombre].sum += Number(ev.puntuacion);
-          scoresByCriteria[nombre].count += 1;
         }
 
-        chartLabels = Object.keys(scoresByCriteria);
-        chartData = chartLabels.map(label => {
-          const s = scoresByCriteria[label];
-          return s.count > 0 ? Math.round(s.sum / s.count) : 0;
-        });
-        puntajeTotal = chartData.length > 0
-          ? Math.round(chartData.reduce((a, b) => a + b, 0) / chartData.length)
-          : 0;
+        chartLabels = [];
+        chartData = [];
+        let grandTotal = 0;
 
-        // 6. Event info
+        // Calculate average per criterion for the chart
+        for (const criterion of criteriosEventos) {
+          chartLabels.push(criterion.nombre);
+          let sumCrit = 0;
+          let countCrit = 0;
+          for (const jId of judgesThatRated) {
+             const s = scoresPerJudge[jId][criterion.id.toString()];
+             if (s !== undefined) {
+               sumCrit += s;
+               countCrit++;
+             }
+          }
+          const avgCrit = countCrit > 0 ? sumCrit / countCrit : 0;
+          chartData.push(Math.round(avgCrit * 10) / 10);
+        }
+
+        // Calculate weighted average of judges
+        if (judgesThatRated.size > 0) {
+          let sumWeightedTotals = 0;
+          for (const jId of judgesThatRated) {
+            let judgeWeightedTotal = 0;
+            for (const criterion of criteriosEventos) {
+              const score = scoresPerJudge[jId][criterion.id.toString()] || 0;
+              judgeWeightedTotal += (score * Number(criterion.ponderacion)) / 100;
+            }
+            sumWeightedTotals += judgeWeightedTotal;
+          }
+          grandTotal = sumWeightedTotals / judgesThatRated.size;
+        }
+
+        comentarios = Object.values(judgeComments);
+        puntajeTotal = Number(grandTotal.toFixed(1));
+
+
+        // 6. Get certificates status
+        const constanciasData = await prisma.certificados.findMany({
+          where: { user_id: BigInt(userId), evento_id: BigInt(proyectoData.evento_id) }
+        });
+        constancias = {
+          individual: constanciasData.some(c => c.tipo === 'INDIVIDUAL'),
+          equipo: constanciasData.some(c => c.tipo === 'EQUIPO')
+        };
+
         if (proyectoData.eventos) {
           evento_inscrito = {
             id: Number(proyectoData.eventos.id),
@@ -125,7 +182,7 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response,
 
     // 8. Upcoming events
     const eventosData = await prisma.eventos.findMany({
-      where: { fecha_fin: { gte: new Date() } },
+      where: { fecha_inicio: { gt: new Date() } },
       orderBy: { fecha_inicio: 'asc' },
       take: 5
     });
@@ -147,9 +204,11 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response,
         puntajeTotal,
         chartLabels,
         chartData,
+        comentarios,
         invitaciones,
         eventos,
         evento_inscrito,
+        constancias,
         user_info: {
           name: user?.name,
           email: user?.email,
@@ -157,7 +216,31 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response,
           carrera: user?.carrera,
           telefono: user?.telefono
         },
-        es_lider: miembros.some(m => m.id === Number(userId) && m.es_lider)
+        es_lider: miembros.some(m => m.id === Number(userId) && m.es_lider),
+        solicitudes_pendientes: (miembros.some(m => m.id === Number(userId) && m.es_lider) && equipo)
+          ? await prisma.equipo_interacciones.findMany({
+              where: {
+                equipo_id: BigInt(equipo.id),
+                tipo: 'SOLICITUD',
+                estado: 'PENDIENTE'
+              },
+              include: {
+                users: {
+                  select: { name: true, no_control: true }
+                },
+                perfiles: {
+                  select: { nombre: true }
+                }
+              }
+            }).then(rows => rows.map(r => ({
+              id: Number(r.id),
+              participante: {
+                user: { name: r.users.name },
+                no_control: r.users.no_control
+              },
+              perfilSugerido: r.perfiles ? { nombre: r.perfiles.nombre } : null
+            })))
+          : []
       }
     });
   } catch (error) {
@@ -225,6 +308,21 @@ router.post('/dashboard/registro-inicial', authMiddleware, async (req: AuthReque
       return res.status(400).json({ success: false, message: 'El teléfono debe tener 10 dígitos' });
     }
 
+    // Uniqueness checks
+    const existingNoControl = await prisma.users.findFirst({
+      where: { no_control, NOT: { id: BigInt(userId) } }
+    });
+    if (existingNoControl) {
+      return res.status(400).json({ success: false, message: 'Este número de control ya está vinculado a otra cuenta' });
+    }
+
+    const existingTelefono = await prisma.users.findFirst({
+      where: { telefono, NOT: { id: BigInt(userId) } }
+    });
+    if (existingTelefono) {
+      return res.status(400).json({ success: false, message: 'Este número de teléfono ya está vinculado a otra cuenta' });
+    }
+
     await prisma.users.update({
       where: { id: BigInt(userId) },
       data: {
@@ -252,7 +350,7 @@ router.post('/dashboard/registro-inicial', authMiddleware, async (req: AuthReque
 router.get('/eventos-disponibles', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const eventos = await prisma.eventos.findMany({
-      where: { fecha_fin: { gte: new Date() } },
+      where: { fecha_inicio: { gt: new Date() } },
       orderBy: { fecha_inicio: 'asc' }
     });
     res.json({ success: true, data: eventos });
@@ -275,6 +373,15 @@ router.post('/equipos', authMiddleware, async (req: AuthRequest, res: Response, 
 
     if (!nombre || !evento_id || !proyecto_nombre || !proyecto_descripcion) {
       return res.status(400).json({ success: false, message: 'Todos los campos obligatorios deben ser completados' });
+    }
+
+    // 0. Verificación: ¿El evento ya comenzó?
+    const evento = await prisma.eventos.findUnique({ where: { id: BigInt(evento_id) } });
+    if (!evento) {
+      return res.status(404).json({ success: false, message: 'Evento no encontrado' });
+    }
+    if (new Date(evento.fecha_inicio) <= new Date()) {
+      return res.status(400).json({ success: false, message: 'No se pueden crear equipos para un evento que ya ha comenzado.' });
     }
 
     // 1. Verificación: ¿Ya está en un equipo para este evento?
@@ -339,6 +446,7 @@ router.post('/equipos', authMiddleware, async (req: AuthRequest, res: Response, 
 router.delete('/equipos/salir', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
+    const { nuevoLiderId } = req.body;
     
     const membership = await prisma.equipo_miembros.findFirst({
       where: { user_id: BigInt(userId) },
@@ -351,21 +459,56 @@ router.delete('/equipos/salir', authMiddleware, async (req: AuthRequest, res: Re
 
     const equipoId = membership.equipo_id;
     const esLider = membership.rol === 'LIDER';
-    const otrosLideres = membership.equipos.equipo_miembros.filter(m => m.rol === 'LIDER' && m.user_id !== BigInt(userId));
+    const otrosMiembros = membership.equipos.equipo_miembros.filter(m => m.user_id !== BigInt(userId));
+    const otrosLideres = otrosMiembros.filter(m => m.rol === 'LIDER');
 
-    if (esLider && otrosLideres.length === 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Como líder, no puedes abandonar el equipo si eres el único líder. Debes asignar a otro líder primero.' 
-      });
+    // Caso: Es el único líder y hay más gente -> Requiere sucesor
+    if (esLider && otrosLideres.length === 0 && otrosMiembros.length > 0) {
+      if (!nuevoLiderId) {
+        return res.status(400).json({ 
+          success: false, 
+          requiresSuccessor: true,
+          message: 'Como único líder, debes designar a un sucesor antes de abandonar el equipo.' 
+        });
+      }
+
+      // Validar que el nuevoLiderId sea un miembro válido del equipo
+      const sucesor = otrosMiembros.find(m => m.user_id === BigInt(nuevoLiderId));
+      if (!sucesor) {
+        return res.status(400).json({ success: false, message: 'El sucesor designado no es válido o no pertenece a tu equipo.' });
+      }
+
+      // Transacción: Promover y Salir
+      await prisma.$transaction([
+        prisma.equipo_miembros.update({
+          where: { id: sucesor.id },
+          data: { rol: 'LIDER' }
+        }),
+        prisma.equipo_miembros.delete({
+          where: { id: membership.id }
+        }),
+        prisma.equipo_interacciones.updateMany({
+          where: { user_id: BigInt(userId), estado: 'PENDIENTE' },
+          data: { estado: 'RECHAZADA', respondido_en: new Date() }
+        })
+      ]);
+
+      return res.json({ success: true, message: 'Has designado un nuevo líder y abandonado el equipo correctamente.' });
     }
 
-    // Salir del equipo
+    // Caso: Es líder y está SOLO
+    if (esLider && otrosLideres.length === 0 && otrosMiembros.length === 0) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'No puedes abandonar el equipo siendo el único integrante. Para eliminarlo, contacta al administrador.' 
+        });
+    }
+
+    // Caso normal: No es líder o hay otros líderes
     await prisma.equipo_miembros.delete({
       where: { id: membership.id }
     });
 
-    // Limpiar invitaciones pendientes
     await prisma.equipo_interacciones.updateMany({
       where: { user_id: BigInt(userId), estado: 'PENDIENTE' },
       data: { estado: 'RECHAZADA', respondido_en: new Date() }
@@ -533,6 +676,23 @@ router.post('/equipos/invitar', authMiddleware, async (req: AuthRequest, res: Re
       return res.status(403).json({ success: false, message: 'Solo el líder puede enviar invitaciones' });
     }
 
+    // 1. Verificar capacidad (Máximo 5)
+    const memberCount = await prisma.equipo_miembros.count({
+      where: { equipo_id: BigInt(equipo_id) }
+    });
+    if (memberCount >= 5) {
+      return res.status(400).json({ success: false, message: 'Tu equipo ya tiene el máximo permitido (5 integrantes).' });
+    }
+
+    // 2. Verificar si el evento comenzó
+    const proyecto = await prisma.proyectos.findFirst({
+        where: { equipo_id: BigInt(equipo_id) },
+        include: { eventos: true }
+    });
+    if (proyecto && proyecto.eventos && new Date(proyecto.eventos.fecha_inicio) <= new Date()) {
+        return res.status(400).json({ success: false, message: 'No puedes invitar a más personas una vez que el evento ha comenzado.' });
+    }
+
     // Verificar si ya tiene equipo
     const targetHasTeam = await prisma.equipo_miembros.findFirst({
         where: { user_id: BigInt(participante_id) }
@@ -620,7 +780,14 @@ router.delete('/equipos/miembros/:id', authMiddleware, async (req: AuthRequest, 
 router.get('/perfiles', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const perfiles = await prisma.perfiles.findMany({
-      where: { deleted_at: null },
+      where: { 
+        deleted_at: null,
+        NOT: {
+          nombre: {
+            in: ['LIDER', 'Líder', 'Lider']
+          }
+        }
+      },
       orderBy: { nombre: 'asc' }
     });
     res.json({ success: true, data: perfiles.map(p => ({ id: Number(p.id), nombre: p.nombre })) });
@@ -691,6 +858,26 @@ router.post('/invitaciones/:id/responder', authMiddleware, async (req: AuthReque
       });
       if (yaTieneEquipo) return res.status(400).json({ success: false, message: 'Ya eres parte de un equipo' });
 
+      // 1. Verificar capacidad del equipo (Máximo 5)
+      const memberCount = await prisma.equipo_miembros.count({
+        where: { equipo_id: interaction.equipo_id }
+      });
+      if (memberCount >= 5) {
+        return res.status(400).json({ success: false, message: 'El equipo ya ha alcanzado su capacidad máxima (5 integrantes).' });
+      }
+
+      // 2. Verificar si el evento ya comenzó (Bloqueo de fichajes de última hora)
+      const proyecto = await prisma.proyectos.findFirst({
+        where: { equipo_id: interaction.equipo_id },
+        include: { eventos: true }
+      });
+      
+      if (proyecto && proyecto.eventos) {
+        if (new Date(proyecto.eventos.fecha_inicio) <= new Date()) {
+          return res.status(400).json({ success: false, message: 'No puedes unirte a un equipo si el evento ya ha comenzado.' });
+        }
+      }
+
       await prisma.$transaction([
         prisma.equipo_interacciones.update({
           where: { id: BigInt(id) },
@@ -712,6 +899,425 @@ router.post('/invitaciones/:id/responder', authMiddleware, async (req: AuthReque
       });
       return res.json({ success: true, message: 'Invitación rechazada' });
     }
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/participante/eventos-proximos:
+ *   get:
+ *     summary: Listar eventos que aún no inician
+ *     tags: [Participante]
+ */
+router.get('/eventos-proximos', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const eventos = await prisma.eventos.findMany({
+      where: { fecha_inicio: { gt: new Date() } },
+      orderBy: { fecha_inicio: 'asc' }
+    });
+    res.json({ success: true, data: eventos });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/participante/equipos-disponibles:
+ *   get:
+ *     summary: Listar equipos con vacantes filtrados por evento
+ *     tags: [Participante]
+ */
+router.get('/equipos-disponibles', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    const evento_id = req.query.evento_id ? BigInt(req.query.evento_id as string) : undefined;
+    const search = req.query.search ? String(req.query.search) : '';
+
+    if (!evento_id) {
+      return res.status(400).json({ success: false, message: 'Debe seleccionar un evento.' });
+    }
+
+    // Buscamos equipos que tengan proyectos en el evento seleccionado
+    const equiposRaw = await prisma.equipos.findMany({
+      where: {
+        nombre: { contains: search },
+        proyectos: {
+          some: { evento_id: evento_id }
+        }
+      },
+      include: {
+        proyectos: {
+          where: { evento_id: evento_id },
+          select: { nombre: true }
+        },
+        equipo_miembros: {
+          select: { id: true, rol: true }
+        },
+        equipo_interacciones: {
+          where: { 
+            user_id: BigInt(userId),
+            tipo: 'SOLICITUD',
+            estado: 'PENDIENTE'
+          },
+          select: { id: true }
+        }
+      }
+    });
+
+    const data = equiposRaw.map(e => {
+      const miembrosCount = e.equipo_miembros.length;
+      // El usuario solicita que TODOS los equipos tengan una capacidad de 5 exactamente
+      const maxTotal = 5;
+      const vacantes = maxTotal - miembrosCount;
+
+      return {
+        id: Number(e.id),
+        nombre: e.nombre,
+        proyecto_nombre: e.proyectos[0]?.nombre || 'Sin nombre',
+        miembros: miembrosCount,
+        max_miembros: maxTotal,
+        vacantes: vacantes > 0 ? vacantes : 0,
+        solicitado: e.equipo_interacciones.length > 0
+      };
+    });
+
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/participante/solicitudes:
+ *   post:
+ *     summary: Enviar solicitud para unirse a un equipo
+ *     tags: [Participante]
+ */
+router.post('/solicitudes', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    const { equipo_id, perfil_id, mensaje } = req.body;
+
+    if (!equipo_id) return res.status(400).json({ success: false, message: 'Equipo no especificado' });
+    if (!perfil_id) return res.status(400).json({ success: false, message: 'Debe seleccionar un rol' });
+
+    // 1. Verificar si el usuario ya está en algún equipo
+    const yaTieneEquipo = await prisma.equipo_miembros.findFirst({
+      where: { user_id: BigInt(userId) }
+    });
+    if (yaTieneEquipo) return res.status(400).json({ success: false, message: 'Ya eres parte de un equipo' });
+
+    // 2. Verificar si ya hay una solicitud pendiente para ESTE equipo
+    const solicitudExistente = await prisma.equipo_interacciones.findFirst({
+      where: {
+        user_id: BigInt(userId),
+        equipo_id: BigInt(equipo_id),
+        tipo: 'SOLICITUD',
+        estado: 'PENDIENTE'
+      }
+    });
+    if (solicitudExistente) return res.status(400).json({ success: false, message: 'Ya tienes una solicitud pendiente para este equipo' });
+
+    // 3. Crear interacción con rol y mensaje
+    await prisma.equipo_interacciones.create({
+      data: {
+        user_id: BigInt(userId),
+        equipo_id: BigInt(equipo_id),
+        tipo: 'SOLICITUD',
+        estado: 'PENDIENTE',
+        perfil_id: BigInt(perfil_id),
+        mensaje: mensaje || null
+      }
+    });
+
+    res.json({ success: true, message: 'Solicitud enviada correctamente' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/participante/equipos/{id}/solicitar-info:
+ *   get:
+ *     summary: Obtener detalles de un equipo para solicitud
+ *     tags: [Participante]
+ */
+router.get('/equipos/:id/solicitar-info', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const equipo = await prisma.equipos.findUnique({
+      where: { id: BigInt(id) },
+      include: {
+        proyectos: { select: { nombre: true } },
+        equipo_miembros: { select: { id: true } }
+      }
+    });
+
+    if (!equipo) return res.status(404).json({ success: false, message: 'Equipo no encontrado' });
+
+    res.json({
+      success: true,
+      data: {
+        id: Number(equipo.id),
+        nombre: equipo.nombre,
+        proyecto_nombre: equipo.proyectos[0]?.nombre || 'Sin proyecto',
+        miembros: equipo.equipo_miembros.length,
+        max_miembros: 5 // Hardcoded por solicitud del usuario
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/participante/equipos/{id}/solicitudes:
+ *   get:
+ *     summary: Listar todas las solicitudes para el equipo (Líder solamente)
+ *     tags: [Participante]
+ */
+router.get('/equipos/:id/solicitudes', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    const { id: equipoId } = req.params;
+
+    const membership = await prisma.equipo_miembros.findFirst({
+      where: { equipo_id: BigInt(equipoId), user_id: BigInt(userId) }
+    });
+
+    if (!membership || membership.rol !== 'LIDER') {
+      return res.status(403).json({ success: false, message: 'Solo el líder puede ver las solicitudes' });
+    }
+
+    const solicitudes = await prisma.equipo_interacciones.findMany({
+      where: { equipo_id: BigInt(equipoId), tipo: 'SOLICITUD' },
+      include: {
+        users: { select: { name: true, email: true, no_control: true, carrera: true } },
+        perfiles: { select: { nombre: true } }
+      },
+      orderBy: { created_at: 'desc' }
+    });
+
+    res.json({
+      success: true,
+      data: solicitudes.map(s => ({
+        id: Number(s.id),
+        participante: {
+          user: { name: s.users.name, email: s.users.email },
+          no_control: s.users.no_control,
+          carrera: { nombre: s.users.carrera }
+        },
+        mensaje: s.mensaje,
+        perfilSugerido: s.perfiles ? { nombre: s.perfiles.nombre } : null,
+        estado: s.estado,
+        created_at: s.created_at
+      }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/participante/solicitudes/{id}/responder:
+ *   post:
+ *     summary: Responder a una solicitud (Aceptar/Rechazar)
+ *     tags: [Participante]
+ */
+router.post('/solicitudes/:id/responder', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { estado, perfil_id } = req.body;
+    const userId = req.user!.id;
+
+    const interaction = await prisma.equipo_interacciones.findUnique({
+      where: { id: BigInt(id) },
+      include: { perfiles: true }
+    });
+
+    if (!interaction || interaction.tipo !== 'SOLICITUD') {
+        return res.status(404).json({ success: false, message: 'Solicitud no encontrada' });
+    }
+
+    const myMembership = await prisma.equipo_miembros.findFirst({
+      where: { equipo_id: interaction.equipo_id, user_id: BigInt(userId) }
+    });
+
+    if (!myMembership || myMembership.rol !== 'LIDER') {
+        return res.status(403).json({ success: false, message: 'Solo el líder puede responder solicitudes' });
+    }
+
+    if (interaction.estado !== 'PENDIENTE') {
+        return res.status(400).json({ success: false, message: 'La solicitud ya ha sido procesada' });
+    }
+
+    const nuevoEstado = String(estado).toUpperCase();
+
+    if (nuevoEstado === 'ACEPTADA') {
+      // 1. Verificar capacidad del equipo (5 hardcoded)
+      const count = await prisma.equipo_miembros.count({ where: { equipo_id: interaction.equipo_id } });
+      if (count >= 5) {
+          return res.status(400).json({ success: false, message: 'El equipo ya está completo (máximo 5 integrantes)' });
+      }
+
+      // 2. Verificar si el solicitante ya tiene equipo
+      const targetHasTeam = await prisma.equipo_miembros.findFirst({ where: { user_id: interaction.user_id } });
+      if (targetHasTeam) {
+          await prisma.equipo_interacciones.update({
+              where: { id: BigInt(id) },
+              data: { estado: 'RECHAZADA', respondido_en: new Date() }
+          });
+          return res.status(400).json({ success: false, message: 'El solicitante ya es parte de otro equipo' });
+      }
+
+      // 3. Aceptar
+      await prisma.$transaction([
+          prisma.equipo_interacciones.update({
+              where: { id: BigInt(id) },
+              data: { estado: 'ACEPTADA', respondido_en: new Date() }
+          }),
+          prisma.equipo_miembros.create({
+              data: {
+                  equipo_id: interaction.equipo_id,
+                  user_id: interaction.user_id,
+                  rol: perfil_id ? (await prisma.perfiles.findUnique({ where: { id: BigInt(perfil_id) } }))?.nombre || 'PROGRAMADOR' : (interaction.perfiles?.nombre || 'PROGRAMADOR')
+              }
+          }),
+          // Opcional: Rechazar otras solicitudes/invitaciones del usuario? Laravel lo hace implícitamente al no permitir unirse a más de uno.
+      ]);
+
+      res.json({ success: true, message: 'Solicitud aceptada. El participante ahora es miembro del equipo.' });
+    } else {
+      await prisma.equipo_interacciones.update({
+          where: { id: BigInt(id) },
+          data: { estado: 'RECHAZADA', respondido_en: new Date() }
+      });
+      res.json({ success: true, message: 'Solicitud rechazada' });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/participante/constancias:
+ *   get:
+ *     summary: Obtener todas las participaciones y estado de constancias
+ *     tags: [Participante]
+ */
+router.get('/constancias', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+
+    // Obtener todas las membresías del usuario en equipos que tengan proyectos y eventos
+    const participaciones = await prisma.equipo_miembros.findMany({
+      where: { user_id: BigInt(userId) },
+      include: {
+        equipos: {
+          include: {
+            proyectos: {
+              include: {
+                eventos: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const results = await Promise.all(participaciones.map(async (p) => {
+      const proyecto = p.equipos.proyectos[0];
+      if (!proyecto) return null;
+
+      const evento = proyecto.eventos;
+      if (!evento) return null;
+
+      const constanciasData = await prisma.certificados.findMany({
+        where: { user_id: BigInt(userId), evento_id: evento.id }
+      });
+
+      return {
+        evento: {
+          id: Number(evento.id),
+          nombre: evento.nombre,
+          fecha_fin: evento.fecha_fin
+        },
+        constancias: {
+          individual: constanciasData.some(c => c.tipo === 'INDIVIDUAL'),
+          equipo: constanciasData.some(c => c.tipo === 'EQUIPO')
+        }
+      };
+    }));
+
+    res.json({ 
+      success: true, 
+      data: results.filter(r => r !== null) 
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/participante/constancias/download/{tipo}/{eventoId}:
+ *   get:
+ *     summary: Descargar constancia por tipo y evento específico
+ *     tags: [Participante]
+ */
+router.get('/constancias/download/:tipo/:eventoId', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    const { tipo, eventoId } = req.params;
+
+    // 1. Verificar si el evento existe
+    const evento = await prisma.eventos.findUnique({
+      where: { id: BigInt(eventoId) }
+    });
+
+    if (!evento) {
+      return res.status(404).json({ success: false, message: 'Evento no encontrado' });
+    }
+
+    // 2. Verificar si el evento terminó
+    if (new Date() < new Date(evento.fecha_fin)) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Los certificados estarán disponibles después del ' + new Date(evento.fecha_fin).toLocaleDateString() 
+      });
+    }
+
+    // 3. Buscar el certificado en la DB
+    const certificado = await prisma.certificados.findFirst({
+      where: { 
+        user_id: BigInt(userId), 
+        evento_id: BigInt(eventoId),
+        tipo: tipo.toUpperCase()
+      }
+    });
+
+    if (!certificado || !certificado.archivo_path) {
+      return res.status(404).json({ success: false, message: 'Certificado no encontrado en el sistema' });
+    }
+
+    // 4. Servir el archivo
+    const fs = require('fs');
+    const path = require('path');
+    const filePath = path.join(__dirname, '..', '..', '..', certificado.archivo_path);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ success: false, message: 'El archivo físico del certificado no existe' });
+    }
+
+    res.download(filePath, `Certificado_${tipo}_${evento.nombre}.pdf`);
   } catch (error) {
     next(error);
   }
