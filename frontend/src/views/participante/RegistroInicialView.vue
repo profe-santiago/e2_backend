@@ -11,8 +11,8 @@
               <svg class="header-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
             </div>
             <div class="header-content">
-              <h3>Información Académica Requerida</h3>
-              <p>Necesitamos que completes tu registro con tus datos escolares para continuar.</p>
+              <h3>Información Académica</h3>
+              <p>Completa tus datos escolares para continuar al panel principal.</p>
             </div>
           </div>
 
@@ -236,33 +236,23 @@ async function save() {
 
 .registration-header {
   padding: 2rem;
-  background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
-  border-bottom: 1px solid #e0e7ff;
+  background: var(--card-muted);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   gap: 1.5rem;
-}
-
-.dark .registration-header {
-  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
-  border-color: #374151;
 }
 
 .header-icon-container {
   width: 3.5rem;
   height: 3.5rem;
   border-radius: 1rem;
-  background: #fff;
+  background: var(--bg-card);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #4f46e5;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-}
-
-.dark .header-icon-container {
-  background: #374151;
-  color: #818cf8;
+  color: var(--indigo-500);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
 }
 
 .header-icon {
@@ -273,21 +263,13 @@ async function save() {
 .header-content h3 {
   font-size: 1.25rem;
   font-weight: 800;
-  color: #111827;
+  color: var(--text-primary);
   margin-bottom: 0.25rem;
-}
-
-.dark .header-content h3 {
-  color: #fff;
 }
 
 .header-content p {
   font-size: 0.875rem;
-  color: #6b7280;
-}
-
-.dark .header-content p {
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 .card-body {
@@ -309,13 +291,9 @@ async function save() {
 .form-group label {
   font-size: 0.875rem;
   font-weight: 700;
-  color: #374151;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.025em;
-}
-
-.dark .form-group label {
-  color: #d1d5db;
 }
 
 .input-with-icon {
@@ -329,7 +307,7 @@ async function save() {
   transform: translateY(-50%);
   width: 1.25rem;
   height: 1.25rem;
-  color: #9ca3af;
+  color: var(--text-muted);
   pointer-events: none;
   z-index: 1;
 }
@@ -352,15 +330,11 @@ async function save() {
 }
 
 .selected-text {
-  color: #111827;
-}
-
-.dark .selected-text {
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .placeholder-text {
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 .arrow-icon {
@@ -378,26 +352,17 @@ async function save() {
   top: calc(100% + 0.5rem);
   left: 0;
   right: 0;
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 0.75rem;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
   z-index: 100;
   overflow: hidden;
 }
 
-.dark .dropdown-menu {
-  background: #1f2937;
-  border-color: #374151;
-}
-
 .dropdown-search {
   padding: 0.75rem;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.dark .dropdown-search {
-  border-color: #374151;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .search-input {
@@ -421,30 +386,22 @@ async function save() {
   align-items: center;
   justify-content: space-between;
   transition: background 0.2s;
-  color: #4b5563;
-}
-
-.dark .dropdown-list li {
-  color: #d1d5db;
+  color: var(--text-secondary);
 }
 
 .dropdown-list li:hover {
-  background: #f9fafb;
-}
-
-.dark .dropdown-list li:hover {
-  background: #374151;
+  background: var(--card-muted);
 }
 
 .dropdown-list li.active {
-  background: #eef2ff;
-  color: #4f46e5;
+  background: var(--indigo-50);
+  color: var(--indigo-600);
   font-weight: 700;
 }
 
 .dark .dropdown-list li.active {
-  background: #374151;
-  color: #818cf8;
+  background: var(--bg-input);
+  color: var(--indigo-400);
 }
 
 .check-icon {
@@ -462,7 +419,7 @@ async function save() {
 .help-text {
   margin-top: 0.25rem;
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 0.5rem;

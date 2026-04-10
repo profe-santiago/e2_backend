@@ -13,8 +13,8 @@
             </div>
             <div class="card-body p-6 space-y-6">
               <div class="form-group">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Evento al que participan</label>
-                <select v-model="form.evento_id" class="form-control-laravel mt-1 block w-full" required>
+                <label class="block text-sm font-medium label-standard">Evento al que participan</label>
+                <select v-model="form.evento_id" class="form-control mt-1 block w-full" required>
                   <option value="">-- Selecciona el evento --</option>
                   <option v-for="e in eventos" :key="e.id" :value="e.id">
                     {{ e.nombre }} (Cierra: {{ formatShortDate(e.fecha_fin) }})
@@ -23,8 +23,8 @@
               </div>
 
               <div class="form-group">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre del Equipo</label>
-                <input v-model="form.nombre" type="text" class="form-control-laravel mt-1 block w-full" required placeholder="Ej. Alpha Devs">
+                <label class="block text-sm font-medium label-standard">Nombre del Equipo</label>
+                <input v-model="form.nombre" type="text" class="form-control mt-1 block w-full" required placeholder="Ej. Alpha Devs">
               </div>
             </div>
           </div>
@@ -40,18 +40,18 @@
             </div>
             <div class="card-body p-6 space-y-6">
               <div class="form-group">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Título del Proyecto</label>
-                <input v-model="form.proyecto_nombre" type="text" class="form-control-laravel mt-1 block w-full" required placeholder="Ej. Sistema de Riego IoT">
+                <label class="block text-sm font-medium label-standard">Título del Proyecto</label>
+                <input v-model="form.proyecto_nombre" type="text" class="form-control mt-1 block w-full" required placeholder="Ej. Sistema de Riego IoT">
               </div>
 
               <div class="form-group">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Descripción Breve</label>
-                <textarea v-model="form.proyecto_descripcion" rows="4" class="form-control-laravel mt-1 block w-full" required placeholder="Describe el problema y tu solución..."></textarea>
+                <label class="block text-sm font-medium label-standard">Descripción Breve</label>
+                <textarea v-model="form.proyecto_descripcion" rows="4" class="form-control mt-1 block w-full" required placeholder="Describe el problema y tu solución..."></textarea>
               </div>
 
               <div class="form-group">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Enlace al Repositorio (GitHub/GitLab)</label>
-                <input v-model="form.repositorio_url" type="url" class="form-control-laravel mt-1 block w-full" placeholder="https://github.com/usuario/repo">
+                <label class="block text-sm font-medium label-standard">Enlace al Repositorio (GitHub/GitLab)</label>
+                <input v-model="form.repositorio_url" type="url" class="form-control mt-1 block w-full" placeholder="https://github.com/usuario/repo">
                 <p class="text-xs text-gray-500 mt-1">Opcional. Puedes agregarlo más tarde.</p>
               </div>
             </div>
@@ -73,11 +73,12 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import api from '../../services/api'
 
 const router = useRouter()
+const route = useRoute()
 const eventos = ref([])
 const saving = ref(false)
 const form = ref({
@@ -98,6 +99,11 @@ onMounted(async () => {
   try {
     const r = await api.get('/participante/eventos-disponibles')
     eventos.value = r.data.data || []
+    
+    // Pre-select event if passed in query
+    if (route.query.evento_id) {
+      form.value.evento_id = Number(route.query.evento_id)
+    }
   } catch (e) {
     console.error(e)
   }
@@ -140,47 +146,24 @@ async function save() {
   border-bottom: 1px solid var(--border);
 }
 
-.section-title {
-  font-size: 1.125rem;
-  font-weight: 500;
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-}
-
-.form-control-laravel {
-  background-color: var(--input-bg, #fff);
-  border: 1px solid var(--border, #d1d5db);
-  color: var(--text-primary);
-  border-radius: 0.375rem;
-  padding: 0.5rem 0.75rem;
-  font-size: 1rem;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-}
-
-.form-control-laravel:focus {
-  border-color: #4f46e5;
-  outline: 0;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-}
-
-.dark .form-control-laravel {
-  background-color: #111827;
-  border-color: #374151;
-  color: #d1d5db;
+.label-standard {
+  color: var(--text-secondary);
 }
 
 .btn-laravel-primary {
-  background-color: #4f46e5;
+  background-color: var(--indigo-600);
   color: #fff;
   font-weight: 500;
   padding: 0.5rem 1.5rem;
-  border-radius: 0.25rem;
-  transition: background-color 0.2s;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
 }
 
 .btn-laravel-primary:hover {
-  background-color: #4338ca;
+  background-color: var(--indigo-700);
+  transform: translateY(-1px);
 }
 
 .btn-laravel-primary:disabled {
@@ -189,48 +172,18 @@ async function save() {
 }
 
 .btn-laravel-secondary {
-  background-color: var(--card-bg);
-  border: 1px solid var(--border);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
   color: var(--text-secondary);
   font-weight: 500;
   padding: 0.5rem 1.5rem;
-  border-radius: 0.25rem;
-  transition: background-color 0.2s;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  cursor: pointer;
 }
 
 .btn-laravel-secondary:hover {
   background-color: var(--card-muted);
+  color: var(--text-primary);
 }
-
-.section-title svg {
-  width: 1.25rem;
-  height: 1.25rem;
-  margin-right: 0.5rem;
-  flex-shrink: 0;
-  display: inline-block;
-  vertical-align: middle;
-}
-
-/* Utility Shim for Tailwind classes used in template */
-.w-5 { width: 1.25rem; }
-.h-5 { height: 1.25rem; }
-.mr-2 { margin-right: 0.5rem; }
-.text-indigo-500 { color: #6366f1; }
-.mb-6 { margin-bottom: 1.5rem; }
-.p-6 { padding: 1.5rem; }
-.space-y-6 > * + * { margin-top: 1.5rem; }
-.mt-1 { margin-top: 0.25rem; }
-.mt-8 { margin-top: 2rem; }
-.gap-4 { gap: 1rem; }
-.flex { display: flex; }
-.items-center { align-items: center; }
-.justify-end { justify-content: flex-end; }
-.block { display: block; }
-.w-full { width: 100%; }
-.text-sm { font-size: 0.875rem; }
-.text-xs { font-size: 0.75rem; }
-.font-medium { font-weight: 500; }
-.text-gray-700 { color: #374151; }
-.dark .text-gray-300 { color: #d1d5db; }
-.text-gray-500 { color: #6b7280; }
 </style>

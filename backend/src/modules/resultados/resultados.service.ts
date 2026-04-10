@@ -34,9 +34,35 @@ export class ResultadosService {
       });
     }
 
-    const rawEventos = await prisma.eventos.findMany({
-      orderBy: { created_at: 'desc' }
-    });
+    let rawEventos;
+    if (userId) {
+      rawEventos = await prisma.eventos.findMany({
+        where: {
+          proyectos: {
+            some: {
+              equipos: {
+                equipo_miembros: {
+                  some: { user_id: BigInt(userId) }
+                }
+              }
+            }
+          }
+        },
+        orderBy: { created_at: 'desc' }
+      });
+
+      // Si el usuario es administrador o no tiene participaciones,
+      // no debemos dejar la lista vacía para él.
+      if (rawEventos.length === 0) {
+        rawEventos = await prisma.eventos.findMany({
+          orderBy: { created_at: 'desc' }
+        });
+      }
+    } else {
+      rawEventos = await prisma.eventos.findMany({
+        orderBy: { created_at: 'desc' }
+      });
+    }
     
     const eventos = rawEventos.map(e => ({
       ...e,

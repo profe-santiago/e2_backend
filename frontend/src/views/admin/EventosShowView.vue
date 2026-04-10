@@ -13,41 +13,94 @@
 
     <div v-if="loading" style="padding:2rem;text-align:center;color:var(--text-muted)">Cargando detalles...</div>
 
-    <div v-else-if="evento" style="display:grid;grid-template-columns:1fr 2fr;gap:2rem;align-items:start">
-      <!-- Columna Izquierda: Información -->
-      <div style="background:var(--card-bg,#fff);border:1px solid var(--border,#e5e7eb);border-radius:1rem;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1)">
-        <div style="padding:1.5rem;border-bottom:1px solid var(--border,#e5e7eb);background:#f9fafb">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem">
-            <h3 style="font-size:1.125rem;font-weight:700;color:var(--text-primary);line-height:1.2">{{ evento.nombre }}</h3>
-            <span :style="{ backgroundColor: getStatusColor(evento).bg, color: getStatusColor(evento).text, border: '1px solid ' + getStatusColor(evento).border }" style="display:inline-flex;align-items:center;padding:.125rem .625rem;border-radius:9999px;font-size:.75rem;font-weight:700">
-              {{ getStatusLabel(evento) }}
-            </span>
+    <div v-else-if="evento" style="display:grid;grid-template-columns:350px 1fr;gap:2rem;align-items:start">
+      <!-- Columna Izquierda: Información y Jueces -->
+      <div style="display:flex;flex-direction:column;gap:2rem">
+        <!-- Card Información -->
+        <div style="background:var(--card-bg,#fff);border:1px solid var(--border,#e5e7eb);border-radius:1rem;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1)">
+          <div style="padding:1.5rem;border-bottom:1px solid var(--border,#e5e7eb);background:#f9fafb">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem">
+              <h3 style="font-size:1.125rem;font-weight:700;color:var(--text-primary);line-height:1.2">{{ evento.nombre }}</h3>
+              <span :style="{ backgroundColor: getStatusColor(evento).bg, color: getStatusColor(evento).text, border: '1px solid ' + getStatusColor(evento).border }" style="display:inline-flex;align-items:center;padding:.125rem .625rem;border-radius:9999px;font-size:.75rem;font-weight:700;white-space:nowrap">
+                {{ getStatusLabel(evento) }}
+              </span>
+            </div>
           </div>
-          <p style="font-size:.75rem;color:var(--text-muted);font-family:monospace">ID: #{{ evento.id }}</p>
+
+          <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1.5rem">
+            <div>
+              <label style="display:block;font-size:.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.25rem">Descripción</label>
+              <p style="font-size:.875rem;color:var(--text-primary);line-height:1.6">{{ evento.descripcion || 'Sin descripción detallada.' }}</p>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+              <div style="background:#f9fafb;padding:.75rem;border-radius:.75rem;border:1px solid var(--border,#e5e7eb)">
+                <span style="display:block;font-size:.75rem;color:#6366f1;font-weight:700;text-transform:uppercase;margin-bottom:.25rem">Inicia</span>
+                <span style="display:block;font-size:.875rem;font-weight:700;color:var(--text-primary)">{{ fmtDate(evento.fecha_inicio) }}</span>
+              </div>
+              <div style="background:#f9fafb;padding:.75rem;border-radius:.75rem;border:1px solid var(--border,#e5e7eb)">
+                <span style="display:block;font-size:.75rem;color:#ef4444;font-weight:700;text-transform:uppercase;margin-bottom:.25rem">Termina</span>
+                <span style="display:block;font-size:.875rem;font-weight:700;color:var(--text-primary)">{{ fmtDate(evento.fecha_fin) }}</span>
+              </div>
+            </div>
+
+            <div>
+              <router-link :to="'/admin/eventos/' + evento.id + '/editar'" class="btn btn-indigo" style="width:100%;justify-content:center;padding:.625rem;border-radius:.75rem;font-size:.875rem;box-shadow:0 4px 6px -1px rgba(79,70,229,.3)">
+                <svg style="width:1rem;height:1rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                Editar Información
+              </router-link>
+            </div>
+          </div>
         </div>
 
-        <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1.5rem">
-          <div>
-            <label style="display:block;font-size:.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.25rem">Descripción</label>
-            <p style="font-size:.875rem;color:var(--text-primary);line-height:1.6">{{ evento.descripcion || 'Sin descripción detallada.' }}</p>
+        <!-- Card Jueces -->
+        <div style="background:var(--card-bg,#fff);border:1px solid var(--border,#e5e7eb);border-radius:1rem;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1)">
+          <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border,#e5e7eb);display:flex;justify-content:space-between;align-items:center;background:#f9fafb">
+            <h3 style="font-size:1rem;font-weight:700;color:var(--text-primary)">Jueces Asignados</h3>
+            <span style="background:#e0e7ff;color:#4338ca;font-size:.7rem;padding:.1rem .5rem;border-radius:9999px;font-weight:800">
+              {{ (evento.jueces?.length || 0) }} / {{ evento.max_jueces || 5 }}
+            </span>
           </div>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-            <div style="background:#f9fafb;padding:.75rem;border-radius:.75rem;border:1px solid var(--border,#e5e7eb)">
-              <span style="display:block;font-size:.75rem;color:#6366f1;font-weight:700;text-transform:uppercase;margin-bottom:.25rem">Inicia</span>
-              <span style="display:block;font-size:.875rem;font-weight:700;color:var(--text-primary)">{{ fmtDate(evento.fecha_inicio) }}</span>
+          
+          <div style="padding:1.5rem">
+            <!-- Selector de Jueces (Solo si no ha comenzado) -->
+            <div v-if="!isLocked" style="margin-bottom:1.5rem">
+              <div style="display:flex;flex-direction:column;gap:0.75rem">
+                <select v-model="selectedJuezId" style="width:100%;padding:.625rem;border-radius:.5rem;border:1px solid #d1d5db;font-size:.875rem;outline:none;background:#fff">
+                  <option value="">Seleccionar juez...</option>
+                  <option v-for="j in availableJuecesFiltered" :key="j.id" :value="j.id">
+                    {{ j.name }} ({{ j.email }})
+                  </option>
+                </select>
+                <button @click="addJuez" :disabled="!selectedJuezId || addingJuez" class="btn btn-indigo" style="width:100%;justify-content:center;padding:.75rem">
+                   <svg style="width:1.25rem;height:1.25rem;margin-right:0.5rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                   {{ addingJuez ? 'Procesando...' : 'Asignar Juez al Evento' }}
+                </button>
+              </div>
+              <p v-if="juezError" style="color:#ef4444;font-size:.8rem;margin-top:.5rem;padding-left:.2rem;font-weight:600">{{ juezError }}</p>
             </div>
-            <div style="background:#f9fafb;padding:.75rem;border-radius:.75rem;border:1px solid var(--border,#e5e7eb)">
-              <span style="display:block;font-size:.75rem;color:#ef4444;font-weight:700;text-transform:uppercase;margin-bottom:.25rem">Termina</span>
-              <span style="display:block;font-size:.875rem;font-weight:700;color:var(--text-primary)">{{ fmtDate(evento.fecha_fin) }}</span>
-            </div>
-          </div>
 
-          <div>
-            <router-link :to="'/admin/eventos/' + evento.id + '/editar'" class="btn btn-indigo" style="width:100%;justify-content:center;padding:.625rem;border-radius:.75rem;font-size:.875rem;box-shadow:0 4px 6px -1px rgba(79,70,229,.3)">
-              <svg style="width:1rem;height:1rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-              Editar Información
-            </router-link>
+            <!-- Lista de Jueces -->
+            <div v-if="!evento.jueces || evento.jueces.length === 0" style="text-align:center;padding:1.5rem;border:2px dashed #f3f4f6;border-radius:.75rem">
+               <p style="color:#9ca3af;font-size:.75rem">No hay jueces asignados.</p>
+            </div>
+            <div v-else style="display:flex;flex-direction:column;gap:.75rem">
+              <div v-for="j in evento.jueces" :key="j.id" 
+                style="display:flex;justify-content:space-between;align-items:center;padding:.75rem;background:#f9fafb;border-radius:.75rem;border:1px solid #f3f4f6">
+                <div style="display:flex;align-items:center;gap:.75rem">
+                  <div style="width:2rem;height:2rem;border-radius:9999px;background:#eef2ff;color:#4f46e5;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;border:1px solid #c7d2fe">
+                    {{ j.name.charAt(0).toUpperCase() }}
+                  </div>
+                  <div style="display:flex;flex-direction:column">
+                    <span style="font-size:.875rem;font-weight:700;color:var(--text-primary)">{{ j.name }}</span>
+                    <span style="font-size:.7rem;color:var(--text-muted)">{{ j.email }}</span>
+                  </div>
+                </div>
+                <button v-if="!isLocked" @click="removeJuez(j.id)" class="text-red-400 hover:text-red-600" style="padding:.25rem;transition:all .2s; border:none; background:transparent; cursor:pointer" title="Remover Juez">
+                  <svg style="width:1.25rem;height:1.25rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -98,11 +151,12 @@
           <!-- Donut / Stats -->
           <div style="display:flex;gap:2rem;margin-bottom:2rem;align-items:center;justify-content:center;padding:1rem;background:#f9fafb;border-radius:1rem;border:1px solid var(--border,#e5e7eb)">
             <div style="position:relative;width:6rem;height:6rem">
-              <svg style="width:100%;height:100%;transform:rotate(-90deg)">
-                <circle cx="48" cy="48" r="40" stroke="currentColor" stroke-width="8" fill="transparent" style="color:#e5e7eb"></circle>
-                <circle cx="48" cy="48" r="40" stroke="currentColor" stroke-width="8" fill="transparent"
-                  stroke-dasharray="251.2"
-                  :stroke-dashoffset="251.2 - (251.2 * sumaTotal) / 100"
+              <svg viewBox="0 0 100 100" style="width:100%;height:100%;transform:rotate(-90deg)">
+                <circle cx="50" cy="50" r="40" stroke="currentColor" stroke-width="8" fill="transparent" style="color:#e5e7eb"></circle>
+                <circle cx="50" cy="50" r="40" stroke="currentColor" stroke-width="8" fill="transparent"
+                  stroke-dasharray="251.3"
+                  :stroke-dashoffset="251.3 - (251.3 * sumaTotal) / 100"
+                  stroke-linecap="round"
                   :style="{ color: disponible === 0 ? '#22c55e' : '#6366f1', transition: 'stroke-dashoffset 0.8s' }">
                 </circle>
               </svg>
@@ -209,9 +263,27 @@ const criterioForm = ref({ nombre: '', ponderacion: '' })
 const editingId = ref(null)
 const editForm = ref({ nombre: '', ponderacion: 0 })
 const savingEdit = ref(false)
+const juezError = ref('')
+
+// Gestión de Jueces
+const availableJueces = ref([])
+const selectedJuezId = ref('')
+const addingJuez = ref(false)
+const isLocked = computed(() => {
+  if (!evento.value) return false
+  const lbl = getStatusLabel(evento.value)
+  return lbl === 'En Curso' || lbl === 'Finalizado'
+})
 
 const sumaTotal = computed(() => criterios.value.reduce((sum, c) => sum + Number(c.ponderacion), 0))
 const disponible = computed(() => 100 - sumaTotal.value)
+
+// Filtrar jueces disponibles que NO estén ya asignados
+const availableJuecesFiltered = computed(() => {
+  if (!evento.value || !evento.value.jueces) return availableJueces.value
+  const assignedIds = evento.value.jueces.map(j => j.id)
+  return availableJueces.value.filter(j => !assignedIds.includes(j.id))
+})
 
 const getStatusLabel = (e) => {
   const now = new Date()
@@ -244,6 +316,48 @@ async function fetchEvento() {
     console.error(e)
   } finally {
     loading.value = false
+  }
+}
+
+async function fetchAvailableJueces() {
+  try {
+    const res = await api.get('/admin/eventos/jueces/disponibles')
+    availableJueces.value = res.data.data
+  } catch (e) {
+    console.error('Error fetching available judges:', e)
+  }
+}
+
+async function addJuez() {
+  if (!selectedJuezId.value) return
+  
+  if (evento.value.jueces && evento.value.jueces.length >= (evento.value.max_jueces || 5)) {
+    juezError.value = `Capacidad máxima alcanzada (${evento.value.max_jueces || 5} jueces).`
+    return
+  }
+  
+  addingJuez.value = true
+  juezError.value = ''
+  try {
+    await api.post(`/admin/eventos/${route.params.id}/jueces`, {
+      userId: selectedJuezId.value
+    })
+    selectedJuezId.value = ''
+    await fetchEvento()
+  } catch (e) {
+    juezError.value = e.response?.data?.message || 'Error al asignar el juez.'
+  } finally {
+    addingJuez.value = false
+  }
+}
+
+async function removeJuez(juezId) {
+  if (!confirm('¿Deseas remover a este juez del evento?')) return
+  try {
+    await api.delete(`/admin/eventos/${route.params.id}/jueces/${juezId}`)
+    await fetchEvento()
+  } catch (e) {
+    alert(e.response?.data?.message || 'Error al remover el juez.')
   }
 }
 
@@ -289,7 +403,6 @@ async function saveEdit(id) {
     cancelEdit()
     await fetchEvento()
   } catch (e) {
-    // Show error inline under the edit form
     alert(e.response?.data?.message || 'Error al actualizar el criterio.')
   } finally {
     savingEdit.value = false
@@ -306,10 +419,41 @@ async function deleteCriterio(id) {
   }
 }
 
-onMounted(fetchEvento)
+onMounted(() => {
+  fetchEvento()
+  fetchAvailableJueces()
+})
 </script>
 
 <style scoped>
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+}
+.btn-sm {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+}
+.btn-indigo {
+  background: #4f46e5;
+  color: white;
+}
+.btn-indigo:hover {
+  background: #4338ca;
+}
+.btn-indigo:disabled {
+  background: #a5b4fc;
+  cursor: not-allowed;
+}
+
 @keyframes ping {
   75%, 100% { transform: scale(2); opacity: 0; }
 }

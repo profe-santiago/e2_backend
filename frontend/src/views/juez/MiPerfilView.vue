@@ -6,7 +6,7 @@
       <div class="page-header">
         <h2 class="page-title">Mi Perfil</h2>
         <nav class="breadcrumb">
-          <router-link to="/admin/dashboard" class="breadcrumb-link">Dashboard</router-link>
+          <router-link to="/juez/dashboard" class="breadcrumb-link">Dashboard</router-link>
           <span class="breadcrumb-sep">/</span>
           <span class="breadcrumb-current">Perfil</span>
         </nav>
@@ -124,21 +124,6 @@
             </div>
           </div>
 
-          <!-- 3. Danger Zone -->
-          <div class="form-card danger-card">
-            <div class="form-card-header danger-header">
-              <h3 class="form-card-title danger-title">Eliminar Cuenta</h3>
-            </div>
-            <div class="form-card-body">
-              <p class="form-description">Una vez que su cuenta sea eliminada, todos sus recursos y datos se eliminarán permanentemente. Antes de eliminar su cuenta, descargue cualquier dato o información que desee conservar.</p>
-              <div class="form-actions" style="margin-top:1.5rem">
-                <button @click="confirmDeleteAccount" class="btn-danger" :disabled="deleting">
-                  {{ deleting ? 'Eliminando...' : 'Eliminar Cuenta' }}
-                </button>
-              </div>
-            </div>
-          </div>
-
         </div>
       </template>
     </div>
@@ -171,9 +156,6 @@ const profileSaved = ref(false)
 const passwordForm = ref({ current_password: '', password: '', password_confirmation: '' })
 const savingPassword = ref(false)
 const passwordSaved = ref(false)
-
-// Delete
-const deleting = ref(false)
 
 const initials = computed(() => {
   const name = user.value.name || ''
@@ -261,19 +243,6 @@ async function handleUpdatePassword() {
     errorMsg.value = e.response?.data?.message || 'Error al actualizar contraseña'
   } finally {
     savingPassword.value = false
-  }
-}
-
-async function confirmDeleteAccount() {
-  if (!confirm('¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer.')) return
-  deleting.value = true
-  try {
-    await api.delete('/auth/profile')
-    auth.logout()
-    router.push('/login')
-  } catch (e) {
-    errorMsg.value = e.response?.data?.message || 'Error al eliminar la cuenta'
-    deleting.value = false
   }
 }
 

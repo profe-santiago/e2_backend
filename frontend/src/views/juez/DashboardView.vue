@@ -44,64 +44,64 @@
         </div>
       </div>
 
-      <!-- Eventos Asignados Section -->
-      <div style="margin-top:2rem">
+      <!-- Eventos en Curso Section -->
+      <div v-if="eventosActivos.length" style="margin-top:2rem">
         <h3 style="font-size:1.125rem;font-weight:700;color:var(--text-primary);margin-bottom:1.5rem;display:flex;align-items:center;gap:.5rem">
-          <svg style="width:1.25rem;height:1.25rem;color:#4f46e5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-          Eventos Asignados
+          <svg style="width:1.25rem;height:1.25rem;color:#4f46e5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Eventos en Curso
         </h3>
 
-        <div v-if="!eventos.length" class="empty-state-card">
-          <svg style="width:3rem;height:3rem;color:#9ca3af;margin:0 auto 1rem" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
-          <h3 style="font-size:.875rem;font-weight:600;color:var(--text-primary)">Sin eventos asignados</h3>
-          <p style="font-size:.875rem;color:var(--text-muted);margin-top:.25rem">No tienes eventos activos para evaluar en este momento.</p>
-        </div>
-
-        <div v-else class="eventos-grid">
-          <div v-for="ev in eventos" :key="ev.id" class="evento-card">
-            <div class="evento-card-body">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem">
+        <div class="eventos-grid">
+          <div v-for="ev in eventosActivos" :key="ev.id" class="evento-card">
+            <div class="evento-card-body" style="padding: 1.25rem">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
                 <div style="flex:1;min-width:0">
-                  <h4 style="font-size:1.25rem;font-weight:700;color:var(--text-primary);margin-bottom:.25rem">{{ ev.nombre }}</h4>
-                  <p style="font-size:.875rem;color:var(--text-muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ ev.descripcion || '' }}</p>
+                  <h4 style="font-size:1.1rem;font-weight:700;color:var(--text-primary);margin-bottom:.15rem">{{ ev.nombre }}</h4>
+                  <p style="font-size:.8rem;color:var(--text-muted);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden">{{ ev.descripcion || 'En curso' }}</p>
                 </div>
-                <span class="badge badge-muted" style="flex-shrink:0;margin-left:.75rem">{{ ev.proyectos?.length || 0 }} Proyectos</span>
+                <span class="badge badge-muted" style="flex-shrink:0;margin-left:.75rem; font-size: 0.65rem">{{ ev.proyectos?.length || 0 }} Proyectos</span>
               </div>
 
               <!-- Proyectos List -->
-              <div v-if="ev.proyectos?.length" style="display:flex;flex-direction:column;gap:.75rem;margin-top:1rem">
-                <div v-for="p in ev.proyectos" :key="p.id" class="proyecto-item" @click="$router.push(`/juez/evaluar/${p.id}`)">
-                  <div class="proyecto-icon">
-                    <svg style="width:1.25rem;height:1.25rem;color:#4f46e5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              <div v-if="ev.proyectos?.length" style="display:flex;flex-direction:column;gap:.5rem;margin-top:0.75rem">
+                <div v-for="p in ev.proyectos" :key="p.id" class="proyecto-item" style="padding: 0.6rem 0.75rem" @click="$router.push(`/juez/evaluar/${p.id}`)">
+                  <div class="proyecto-icon" style="width:2rem; height:2rem">
+                    <svg style="width:1rem;height:1rem;color:#4f46e5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                   </div>
                   <div style="flex:1;min-width:0">
-                    <h4 style="font-size:.875rem;font-weight:700;color:var(--text-primary)">{{ p.nombre }}</h4>
-                    <p style="font-size:.75rem;color:var(--text-muted)">Equipo: {{ p.equipo?.nombre || p.equipo || '-' }}</p>
+                    <h4 style="font-size:.8rem;font-weight:700;color:var(--text-primary); margin:0">{{ p.nombre }}</h4>
+                    <p style="font-size:.7rem;color:var(--text-muted); margin:0">{{ p.equipo?.nombre || p.equipo || '-' }}</p>
                   </div>
-                  <span v-if="p.evaluado" class="badge badge-participante">✓ Evaluado</span>
-                  <span v-else class="badge badge-juez">Pendiente</span>
+                  <span v-if="p.evaluado" class="badge badge-participante" style="font-size: 0.65rem">✓ Calificado</span>
+                  <span v-else class="badge badge-juez" style="font-size: 0.65rem">Pendiente</span>
                 </div>
               </div>
 
               <!-- Progress Bar -->
               <div style="margin-top:1rem">
-                <div style="background:var(--bg-muted, #e5e7eb);border-radius:9999px;height:.375rem;overflow:hidden">
+                <div style="background:var(--bg-muted, #e5e7eb);border-radius:9999px;height:.25rem;overflow:hidden">
                   <div style="background:#4f46e5;height:100%;border-radius:9999px;transition:width .5s" :style="{ width: getProgress(ev) + '%' }"></div>
                 </div>
               </div>
             </div>
-            <div class="evento-card-footer">
-              <div style="display:flex;align-items:center;font-size:.75rem;color:var(--text-muted);font-weight:500">
-                <svg style="width:1rem;height:1rem;margin-right:.375rem;color:#f87171" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <div class="evento-card-footer" style="padding: 0.85rem 1.25rem">
+              <div style="display:flex;align-items:center;font-size:.7rem;color:var(--text-muted);font-weight:600">
+                <svg style="width:0.875rem;height:0.875rem;margin-right:.25rem;color:#4f46e5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 Cierre: {{ formatDate(ev.fecha_fin) }}
               </div>
-              <router-link :to="`/juez/evento/${ev.id}`" class="entrar-link" @click.stop>
-                Entrar a Evaluar
-                <svg style="width:1rem;height:1rem;margin-left:.25rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+              <router-link :to="`/juez/eventos/${ev.id}`" class="entrar-link" style="font-size: 0.8rem" @click.stop>
+                Evaluar
+                <svg style="width:0.875rem;height:0.875rem;margin-left:.15rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
               </router-link>
             </div>
           </div>
         </div>
+      </div>
+
+      <div v-if="!eventos.length" class="empty-state-card" style="margin-top: 2rem">
+        <svg style="width:3rem;height:3rem;color:#9ca3af;margin:0 auto 1rem" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+        <h3 style="font-size:.875rem;font-weight:600;color:var(--text-primary)">Sin eventos asignados</h3>
+        <p style="font-size:.875rem;color:var(--text-muted);margin-top:.25rem">No tienes eventos asignados para evaluar en este momento.</p>
       </div>
 
     </template>
@@ -127,6 +127,11 @@ const proyectosEvaluados = computed(() => {
 })
 
 const pendientes = computed(() => totalProyectos.value - proyectosEvaluados.value)
+
+const eventosActivos = computed(() => {
+  const now = new Date()
+  return eventos.value.filter(ev => new Date(ev.fecha_fin) >= now)
+})
 
 function getProgress(ev) {
   const total = ev.proyectos?.length || 0

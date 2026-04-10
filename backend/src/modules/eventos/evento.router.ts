@@ -232,12 +232,32 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response, ne
  *   post:
  *     summary: Asignar un juez a un evento
  *     tags: [Eventos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Juez asignado correctamente
  */
 router.post('/:id/jueces', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const eventoId = parseInt(req.params.id as string, 10);
+    const id = parseInt(req.params.id as string, 10);
     const { userId } = req.body;
-    const result = await eventoService.addJuezToEvento(eventoId, userId);
+    const result = await eventoService.addJuezToEvento(id, Number(userId));
     res.status(201).json(result);
   } catch (error) {
     next(error);
@@ -246,16 +266,32 @@ router.post('/:id/jueces', authMiddleware, async (req: Request, res: Response, n
 
 /**
  * @openapi
- * /api/admin/eventos/{id}/jueces/{juezId}:
+ * /api/admin/eventos/{id}/jueces/{userId}:
  *   delete:
  *     summary: Remover un juez de un evento
  *     tags: [Eventos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Juez removido correctamente
  */
-router.delete('/:id/jueces/:juezId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id/jueces/:userId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const eventoId = parseInt(req.params.id as string, 10);
-    const juezId = parseInt(req.params.juezId as string, 10);
-    const result = await eventoService.removeJuezFromEvento(eventoId, juezId);
+    const id = parseInt(req.params.id as string, 10);
+    const userId = parseInt(req.params.userId as string, 10);
+    const result = await eventoService.removeJuezFromEvento(id, userId);
     res.json(result);
   } catch (error) {
     next(error);

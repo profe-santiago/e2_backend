@@ -30,7 +30,8 @@ const validate = (schema: any) => (req: Request, res: Response, next: NextFuncti
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const userId = Number(req.user.id);
-    const result = await avanceService.getAvances(userId);
+    const proyectoId = req.query.proyectoId ? Number(req.query.proyectoId) : undefined;
+    const result = await avanceService.getAvances(userId, proyectoId);
     res.json(result);
   } catch (error) {
     next(error);
@@ -58,7 +59,8 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response, next: Ne
 router.post('/', authMiddleware, validate(storeAvanceSchema), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const userId = Number(req.user.id);
-    const result = await avanceService.storeAvance(userId, req.body);
+    const proyectoId = req.body.proyectoId ? Number(req.body.proyectoId) : undefined;
+    const result = await avanceService.storeAvance(userId, req.body, proyectoId);
     res.status(201).json(result);
   } catch (error) {
     next(error);

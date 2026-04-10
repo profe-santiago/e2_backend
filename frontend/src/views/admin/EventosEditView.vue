@@ -24,10 +24,17 @@
         </div>
 
         <div v-if="fetching" style="padding:2rem;text-align:center;color:var(--text-muted)">Cargando datos...</div>
-
         <form v-else @submit.prevent="saveEvent" style="display:flex;flex-direction:column;gap:1.5rem">
           <!-- Error Alert -->
           <div v-if="error" class="alert alert-red" style="margin-bottom:1rem">{{ error }}</div>
+
+          <!-- Started Blocking Banner -->
+          <div v-if="isStarted && !fetching" style="margin-bottom:1.5rem;background:#fff7ed;border:1px solid #fed7aa;border-radius:.75rem;padding:1rem;display:flex;align-items:center;gap:1rem;color:#9a3412">
+            <svg style="width:1.5rem;height:1.5rem;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <div style="font-size:.875rem;font-weight:600">
+              Este evento ya ha comenzado y se encuentra bloqueado para edición. No puedes realizar cambios en la configuración ni en las fechas.
+            </div>
+          </div>
 
           <!-- Nombre -->
           <div>
@@ -43,63 +50,37 @@
           <!-- Descripción -->
           <div>
             <label style="display:block;font-size:.875rem;font-weight:700;color:var(--text-primary);margin-bottom:.5rem">Descripción</label>
-            <textarea v-model="form.descripcion" rows="4" style="width:100%;padding:1rem;border-radius:.75rem;border:1px solid var(--border,#d1d5db);background:var(--input-bg,#fff);color:var(--text-primary);font-size:.875rem;resize:vertical"></textarea>
+            <textarea v-model="form.descripcion" rows="4" style="width:100%;padding:1rem;border-radius:.75rem;border:1px solid var(--border,#d1d5db);background:var(--input-bg,#fff);color:var(--text-primary);font-size:.875rem;resize:vertical" placeholder="Detalles sobre el evento..."></textarea>
           </div>
 
-          <!-- SECCIÓN DE JUECES CON BUSCADOR MULTI-SELECT -->
-          <div style="position:relative">
-            <label style="display:block;font-size:.875rem;font-weight:700;color:var(--text-primary);margin-bottom:.5rem">Asignar Jueces</label>
-            
-            <!-- Lista de Jueces Seleccionados (Visual) -->
-            <div style="margin-bottom:.75rem;display:flex;flex-wrap:wrap;gap:.5rem;min-height:2.5rem;padding:.5rem;background:#f9fafb;border-radius:.75rem;border:1px dashed var(--border,#d1d5db)">
-              <div v-for="j in form.jueces" :key="j.id" style="display:flex;align-items:center;gap:.5rem;background:var(--card-bg,#fff);border:1px solid var(--border,#e5e7eb);padding:.25rem .25rem .25rem .5rem;border-radius:.5rem;box-shadow:0 1px 2px rgba(0,0,0,0.05)">
-                <div style="width:1.25rem;height:1.25rem;border-radius:50%;background:#eef2ff;color:#4338ca;display:flex;align-items:center;justify-content:center;font-size:.625rem;font-weight:700">{{ j.name.charAt(0).toUpperCase() }}</div>
-                <span style="font-size:.75rem;font-weight:500;color:var(--text-secondary)">{{ j.name }}</span>
-                <button type="button" @click="form.jueces = form.jueces.filter(jj => jj.id !== j.id)" style="padding:.25rem;color:#9ca3af;background:transparent;border:none;cursor:pointer;border-radius:.25rem" class="hover:text-red-500 hover:bg-red-50">
-                  <svg style="width:.75rem;height:.75rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-              </div>
-              <div v-if="form.jueces.length === 0" style="width:100%;text-align:center;padding:.5rem 0">
-                <span style="font-size:.75rem;color:var(--text-muted);font-style:italic">No hay jueces asignados aún.</span>
-              </div>
-            </div>
-
-            <!-- Input Buscador -->
+          <!-- CAPACIDAD DE JUECES -->
+          <div>
+            <label style="display:block;font-size:.875rem;font-weight:700;color:var(--text-primary);margin-bottom:.5rem">Capacidad de Jueces <span style="color:#ef4444">*</span></label>
             <div style="position:relative">
               <div style="position:absolute;left:0;top:0;bottom:0;width:2.5rem;display:flex;align-items:center;justify-content:center;color:var(--text-muted)">
-                <svg style="width:1.25rem;height:1.25rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <svg style="width:1.25rem;height:1.25rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
               </div>
-              <input type="text" v-model="judgeSearch" placeholder="Buscar juez por nombre o correo..." style="width:100%;padding:.5rem 1rem .5rem 2.5rem;background:var(--card-bg,#fff);border:1px solid var(--border,#d1d5db);border-radius:.5rem;font-size:.875rem;color:var(--text-primary)">
+              <select v-model="form.max_jueces" style="width:100%;padding:.75rem 1rem .75rem 2.5rem;border-radius:.75rem;border:1px solid var(--border,#d1d5db);background:var(--input-bg,#fff);color:var(--text-primary);font-size:.875rem;appearance:none" required>
+                <option :value="3">3 Jueces (Mínimo)</option>
+                <option :value="5">5 Jueces (Estándar)</option>
+                <option :value="10">10 Jueces (Máximo)</option>
+              </select>
+              <div style="position:absolute;right:1rem;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-muted)">
+                <svg style="width:1rem;height:1rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
             </div>
-
-            <!-- Dropdown de Resultados -->
-            <div v-if="judgeSearch.length > 0 && filteredJueces.length > 0" style="position:absolute;z-index:50;width:100%;margin-top:.25rem;background:var(--card-bg,#fff);border:1px solid var(--border,#f3f4f6);border-radius:.75rem;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);max-height:15rem;overflow-y:auto">
-              <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column">
-                <li v-for="j in filteredJueces" :key="j.id" @click="addJuez(j)" style="padding:.75rem 1rem;cursor:pointer;border-bottom:1px solid var(--border,#f3f4f6)" class="hover:bg-gray-50">
-                  <div style="display:flex;align-items:center;gap:.75rem">
-                    <div style="width:2rem;height:2rem;border-radius:50%;background:#eef2ff;display:flex;align-items:center;justify-content:center;color:#4f46e5;font-weight:700;font-size:.75rem">{{ j.name.charAt(0).toUpperCase() }}</div>
-                    <div>
-                      <div style="font-size:.875rem;font-weight:700;color:var(--text-primary)">{{ j.name }}</div>
-                      <div style="font-size:.75rem;color:var(--text-muted)">{{ j.email }}</div>
-                    </div>
-                  </div>
-                </li>
-              </ul>
-            </div>
-            <div v-if="judgeSearch.length > 0 && filteredJueces.length === 0" style="margin-top:.5rem;padding:.5rem;text-align:center;font-size:.75rem;color:var(--text-muted);background:#f9fafb;border-radius:.5rem;border:1px solid var(--border,#f3f4f6)">
-              No se encontraron coincidencias.
-            </div>
+            <p style="font-size:.75rem;color:var(--text-muted);margin-top:.5rem">Ajusta la capacidad de evaluación para este evento.</p>
           </div>
 
           <!-- Fechas -->
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
             <div>
               <label style="display:block;font-size:.875rem;font-weight:700;color:var(--text-primary);margin-bottom:.5rem">Inicio (Fecha y Hora) <span style="color:#ef4444">*</span></label>
-              <input v-model="form.fecha_inicio" type="datetime-local" style="width:100%;padding:.75rem 1rem;border-radius:.75rem;border:1px solid var(--border,#d1d5db);background:var(--input-bg,#fff);color:var(--text-primary);font-size:.875rem" required>
+              <input v-model="form.fecha_inicio" type="datetime-local" :min="minDateTime" style="width:100%;padding:.75rem 1rem;border-radius:.75rem;border:1px solid var(--border,#d1d5db);background:var(--input-bg,#fff);color:var(--text-primary);font-size:.875rem" required>
             </div>
             <div>
               <label style="display:block;font-size:.875rem;font-weight:700;color:var(--text-primary);margin-bottom:.5rem">Cierre (Fecha y Hora) <span style="color:#ef4444">*</span></label>
-              <input v-model="form.fecha_fin" type="datetime-local" style="width:100%;padding:.75rem 1rem;border-radius:.75rem;border:1px solid var(--border,#d1d5db);background:var(--input-bg,#fff);color:var(--text-primary);font-size:.875rem" required>
+              <input v-model="form.fecha_fin" type="datetime-local" :min="form.fecha_inicio || minDateTime" style="width:100%;padding:.75rem 1rem;border-radius:.75rem;border:1px solid var(--border,#d1d5db);background:var(--input-bg,#fff);color:var(--text-primary);font-size:.875rem" required>
             </div>
           </div>
 
@@ -108,9 +89,9 @@
             <router-link to="/admin/eventos" style="font-size:.875rem;font-weight:500;color:var(--text-muted);text-decoration:none" class="hover:text-gray-900">
               Descartar
             </router-link>
-            <button type="submit" class="btn btn-indigo" :disabled="loading" style="padding:.75rem 1.5rem;border-radius:.75rem;font-size:.875rem;box-shadow:0 4px 6px -1px rgba(79,70,229,.3)">
+            <button type="submit" class="btn btn-indigo" :disabled="loading || isStarted" style="padding:.75rem 1.5rem;border-radius:.75rem;font-size:.875rem;box-shadow:0 4px 6px -1px rgba(79,70,229,.3)" :style="isStarted ? 'opacity:0.5;cursor:not-allowed' : ''">
               <svg style="width:1.25rem;height:1.25rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-              {{ loading ? 'Guardando...' : 'Guardar Cambios' }}
+              {{ loading ? 'Guardando...' : (isStarted ? 'Bloqueado' : 'Guardar Cambios') }}
             </button>
           </div>
         </form>
@@ -133,44 +114,49 @@ const loading = ref(false)
 const fetching = ref(true)
 const error = ref('')
 
-const judgeSearch = ref('')
-const allJueces = ref([])
-
 const form = ref({
   nombre: '',
   descripcion: '',
   fecha_inicio: '',
   fecha_fin: '',
-  jueces: []
+  max_jueces: 5
 })
 
-const filteredJueces = computed(() => {
-  if (!judgeSearch.value) return []
-  const q = judgeSearch.value.toLowerCase()
-  return allJueces.value.filter(j => 
-    (j.name.toLowerCase().includes(q) || j.email.toLowerCase().includes(q)) &&
-    !form.value.jueces.find(sj => sj.id === j.id)
-  )
+const isStarted = ref(false)
+
+const minDateTime = computed(() => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 })
 
-function addJuez(j) {
-  form.value.jueces.push(j)
-  judgeSearch.value = ''
+const formatToLocalDatetime = (dateStr) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  // Adjust for timezone offset to get local YYYY-MM-DDTHH:mm
+  const localDate = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 16);
 }
 
 onMounted(async () => {
   try {
-    const resJ = await api.get('/admin/eventos/jueces/disponibles')
-    allJueces.value = resJ.data.data || []
-
     const res = await api.get(`/admin/eventos/${eventId}`)
     const ev = res.data.data
     form.value.nombre = ev.nombre
     form.value.descripcion = ev.descripcion || ''
-    // Format dates to YYYY-MM-DDTHH:MM that datatime-local expects
-    form.value.fecha_inicio = ev.fecha_inicio ? new Date(ev.fecha_inicio).toISOString().slice(0,16) : ''
-    form.value.fecha_fin = ev.fecha_fin ? new Date(ev.fecha_fin).toISOString().slice(0,16) : ''
-    form.value.jueces = ev.jueces || []
+    form.value.max_jueces = ev.max_jueces || 5
+    // Format dates to local YYYY-MM-DDTHH:MM that datetime-local expects
+    form.value.fecha_inicio = formatToLocalDatetime(ev.fecha_inicio)
+    form.value.fecha_fin = formatToLocalDatetime(ev.fecha_fin)
+
+    // Check if event has started
+    if (new Date() >= new Date(ev.fecha_inicio)) {
+        isStarted.value = true;
+    }
   } catch (err) {
     error.value = 'No se pudo cargar el evento.'
   } finally {
@@ -193,7 +179,7 @@ async function saveEvent() {
       descripcion: form.value.descripcion,
       fecha_inicio: new Date(form.value.fecha_inicio).toISOString(),
       fecha_fin: new Date(form.value.fecha_fin).toISOString(),
-      jueces: form.value.jueces.map(j => j.id)
+      max_jueces: form.value.max_jueces
     }
     await api.put(`/admin/eventos/${eventId}`, payload)
     router.push('/admin/eventos')

@@ -11,7 +11,7 @@ export class EquipoRepository {
     const offset = (page - 1) * limit;
 
     const where: any = {};
-    if (search) {
+    if (search && search.trim() !== "") {
       where.nombre = { contains: search };
     }
     if (evento_id !== undefined) {
@@ -26,6 +26,7 @@ export class EquipoRepository {
           proyectos: {
             where: evento_id !== undefined ? { evento_id: BigInt(evento_id) } : undefined,
             include: { eventos: true },
+            orderBy: { created_at: "desc" }
           },
           equipo_miembros: {
             include: {

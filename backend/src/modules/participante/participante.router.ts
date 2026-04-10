@@ -1,6 +1,13 @@
 import { Router, Response, NextFunction } from 'express';
 import { authMiddleware, AuthRequest } from '../../middlewares/auth.middleware';
 import prisma from '../../utils/prisma';
+import { ConstanciaService } from '../constancias/constancias.service';
+import { PdfService } from '../../utils/pdf.service';
+import { RankingService } from '../resultados/ranking.service';
+import path from 'path';
+
+const constanciaService = new ConstanciaService();
+const rankingService = new RankingService();
 
 const router = Router();
 
@@ -31,21 +38,92 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response,
     let evento_inscrito: any = null;
     let constancias: any = { individual: false, equipo: false };
 
-    // 2. Find team via equipo_miembros
-    const membership = await prisma.equipo_miembros.findFirst({
+    // 2. Find ALL memberships for multi-event support
+    const memberships = await prisma.equipo_miembros.findMany({
       where: { user_id: BigInt(userId) },
-      include: { equipos: true }
+      include: { 
+        equipos: { 
+          include: { 
+            proyectos: { include: { eventos: true } } 
+          } 
+        } 
+      }
     });
 
-    if (membership) {
+    // Extract all participations (project + event + team)
+    const participaciones: any[] = [];
+    memberships.forEach(m => {
+      m.equipos.proyectos.forEach(p => {
+        participaciones.push({
+          proyecto_id: Number(p.id),
+          equipo_id: Number(m.equipos.id),
+          equipo_nombre: m.equipos.nombre,
+          proyecto_nombre: p.nombre,
+          evento_id: Number(p.evento_id),
+          evento_nombre: p.eventos?.nombre || 'Evento Desconocido',
+          fecha_fin: p.eventos?.fecha_fin
+        });
+      });
+    });
+
+    // Determine the active context
+    const proyectoIdReq = req.query.proyectoId ? BigInt(req.query.proyectoId as string) : null;
+    const eventoIdReq = req.query.eventoId ? BigInt(req.query.eventoId as string) : null;
+    let activeMembership = null;
+    let activeProyectoData = null;
+
+    if (proyectoIdReq) {
+      // Find the membership for this specific project
+      activeMembership = memberships.find(m => 
+        m.equipos.proyectos.some(p => p.id === proyectoIdReq)
+      );
+      if (activeMembership) {
+        activeProyectoData = activeMembership.equipos.proyectos.find(p => p.id === proyectoIdReq);
+      }
+    } else if (eventoIdReq) {
+      // Try to find if user is already in this event
+      activeMembership = memberships.find(m => 
+        m.equipos.proyectos.some(p => p.id === eventoIdReq || p.evento_id === eventoIdReq)
+      );
+      if (activeMembership) {
+        activeProyectoData = activeMembership.equipos.proyectos.find(p => p.evento_id === eventoIdReq);
+      } else {
+        // Just fetch the event info for the "No Team" view
+        const eventInfo = await prisma.eventos.findUnique({ where: { id: eventoIdReq } });
+        if (eventInfo) {
+          evento_inscrito = {
+            id: Number(eventInfo.id),
+            nombre: eventInfo.nombre,
+            descripcion: eventInfo.descripcion,
+            fecha_inicio: eventInfo.fecha_inicio,
+            fecha_fin: eventInfo.fecha_fin
+          };
+        }
+      }
+    } else {
+      // Ordenar participaciones por fecha para tomar la más reciente como predeterminada
+      const sortedParticipaciones = [...participaciones].sort((a, b) => 
+        new Date(b.fecha_fin || 0).getTime() - new Date(a.fecha_fin || 0).getTime()
+      );
+      
+      const defaultPart = sortedParticipaciones[0];
+      if (defaultPart) {
+        activeMembership = memberships.find(m => Number(m.equipo_id) === defaultPart.equipo_id);
+        if (activeMembership) {
+          activeProyectoData = activeMembership.equipos.proyectos.find(p => Number(p.id) === defaultPart.proyecto_id);
+        }
+      }
+    }
+
+    if (activeMembership && activeProyectoData) {
       equipo = {
-        id: Number(membership.equipos.id),
-        nombre: membership.equipos.nombre
+        id: Number(activeMembership.equipos.id),
+        nombre: activeMembership.equipos.nombre
       };
 
-      // 3. Get team members
+      // 3. Get team members for active context
       const miembrosData = await prisma.equipo_miembros.findMany({
-        where: { equipo_id: membership.equipo_id },
+        where: { equipo_id: activeMembership.equipo_id },
         include: { users: { select: { id: true, name: true } } }
       });
       miembros = miembrosData.map(m => ({
@@ -55,28 +133,57 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response,
         es_lider: m.rol === 'LIDER'
       }));
 
-      // 4. Find the team's project
-      const proyectoData = await prisma.proyectos.findFirst({
-        where: { equipo_id: membership.equipo_id },
-        include: { eventos: true }
+      // 4. Set project info
+      proyecto = {
+        id: Number(activeProyectoData.id),
+        nombre: activeProyectoData.nombre,
+        descripcion: activeProyectoData.descripcion,
+        repositorio_url: activeProyectoData.repositorio_url || null,
+        evento_id: Number(activeProyectoData.evento_id)
+      };
+
+      // 5. Get scores by criteria for this project
+      const evaluaciones = await prisma.evaluaciones.findMany({
+        where: { proyecto_id: activeProyectoData.id },
+        include: { evaluacion_criterios: true }
       });
 
-      if (proyectoData) {
-        proyecto = {
-          id: Number(proyectoData.id),
-          nombre: proyectoData.nombre,
-          descripcion: proyectoData.descripcion,
-          repositorio_url: proyectoData.repositorio_url || null,
-          evento_id: Number(proyectoData.evento_id)
+      const scoresByCriteria: Record<string, { sum: number; count: number }> = {};
+      for (const ev of evaluaciones) {
+        const nombre = ev.evaluacion_criterios?.nombre || 'Criterio';
+        if (!scoresByCriteria[nombre]) {
+          scoresByCriteria[nombre] = { sum: 0, count: 0 };
+        }
+        scoresByCriteria[nombre].sum += Number(ev.puntuacion);
+        scoresByCriteria[nombre].count += 1;
+      }
+
+      chartLabels = Object.keys(scoresByCriteria);
+      chartData = chartLabels.map(label => {
+        const s = scoresByCriteria[label];
+        return s.count > 0 ? Math.round(s.sum / s.count) : 0;
+      });
+      puntajeTotal = chartData.length > 0
+        ? Math.round(chartData.reduce((a, b) => a + b, 0) / chartData.length)
+        : 0;
+
+      // 6. Event info
+      if (activeProyectoData.eventos) {
+        evento_inscrito = {
+          id: Number(activeProyectoData.eventos.id),
+          nombre: activeProyectoData.eventos.nombre,
+          descripcion: activeProyectoData.eventos.descripcion,
+          fecha_inicio: activeProyectoData.eventos.fecha_inicio,
+          fecha_fin: activeProyectoData.eventos.fecha_fin
         };
 
-        // 5. Get scores by criteria and comments (Weighted Calculation)
+        // 5. Get scores by criteria and comments (Weighted Calculation from production)
         const criteriosEventos = await prisma.evaluacion_criterios.findMany({
-          where: { evento_id: BigInt(proyectoData.evento_id) }
+          where: { evento_id: BigInt(activeProyectoData.evento_id) }
         });
 
-        const evaluaciones = await prisma.evaluaciones.findMany({
-          where: { proyecto_id: proyectoData.id },
+        const evaluacionesRaw = await prisma.evaluaciones.findMany({
+          where: { proyecto_id: activeProyectoData.id },
           include: { users: { select: { name: true } } }
         });
 
@@ -84,7 +191,7 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response,
         const scoresPerJudge: Record<string, Record<string, number>> = {};
         const judgesThatRated = new Set<string>();
 
-        for (const ev of evaluaciones) {
+        for (const ev of evaluacionesRaw) {
           const juezId = ev.juez_id.toString();
           const critId = ev.criterio_id.toString();
           judgesThatRated.add(juezId);
@@ -141,25 +248,14 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response,
         comentarios = Object.values(judgeComments);
         puntajeTotal = Number(grandTotal.toFixed(1));
 
-
         // 6. Get certificates status
         const constanciasData = await prisma.certificados.findMany({
-          where: { user_id: BigInt(userId), evento_id: BigInt(proyectoData.evento_id) }
+          where: { user_id: BigInt(userId), evento_id: BigInt(activeProyectoData.evento_id) }
         });
         constancias = {
           individual: constanciasData.some(c => c.tipo === 'INDIVIDUAL'),
           equipo: constanciasData.some(c => c.tipo === 'EQUIPO')
         };
-
-        if (proyectoData.eventos) {
-          evento_inscrito = {
-            id: Number(proyectoData.eventos.id),
-            nombre: proyectoData.eventos.nombre,
-            descripcion: proyectoData.eventos.descripcion,
-            fecha_inicio: proyectoData.eventos.fecha_inicio,
-            fecha_fin: proyectoData.eventos.fecha_fin
-          };
-        }
       }
     }
 
@@ -180,7 +276,7 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response,
       estado: inv.estado
     }));
 
-    // 8. Upcoming events
+    // 8. Upcoming events (Restored to avoid empty state for users without teams)
     const eventosData = await prisma.eventos.findMany({
       where: { fecha_inicio: { gt: new Date() } },
       orderBy: { fecha_inicio: 'asc' },
@@ -217,6 +313,7 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response,
           telefono: user?.telefono
         },
         es_lider: miembros.some(m => m.id === Number(userId) && m.es_lider),
+        participaciones,
         solicitudes_pendientes: (miembros.some(m => m.id === Number(userId) && m.es_lider) && equipo)
           ? await prisma.equipo_interacciones.findMany({
               where: {
@@ -354,6 +451,70 @@ router.get('/eventos-disponibles', authMiddleware, async (req: AuthRequest, res:
       orderBy: { fecha_inicio: 'asc' }
     });
     res.json({ success: true, data: eventos });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Alias para compatibilidad con vistas de registro
+router.get('/eventos-proximos', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const eventos = await prisma.eventos.findMany({
+      where: { fecha_fin: { gte: new Date() } },
+      orderBy: { fecha_inicio: 'asc' }
+    });
+    res.json({ success: true, data: eventos.map(e => ({
+      ...e,
+      id: Number(e.id)
+    })) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/participante/equipos-disponibles:
+ *   get:
+ *     summary: Listar equipos con vacantes en un evento
+ *     tags: [Participante]
+ */
+router.get('/equipos-disponibles', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { evento_id, search } = req.query;
+    if (!evento_id) return res.status(400).json({ success: false, message: 'evento_id es requerido' });
+
+    const currentUserId = req.user!.id;
+
+    const equipos = await prisma.equipos.findMany({
+      where: {
+        proyectos: { some: { evento_id: BigInt(evento_id as string) } },
+        nombre: search ? { contains: search as string } : undefined
+      },
+      include: {
+        equipo_miembros: true,
+        proyectos: true
+      }
+    });
+
+    const result = equipos.map(e => {
+      const max_miembros = 5; // O el valor que tengas configurado
+      const miembros_actuales = e.equipo_miembros.length;
+      const solicitado = false; // Aquí podrías añadir lógica si hay tabla de solicitudes
+
+      return {
+        id: Number(e.id),
+        nombre: e.nombre,
+        miembros: miembros_actuales,
+        max_miembros,
+        vacantes: max_miembros - miembros_actuales,
+        proyecto_nombre: e.proyectos[0]?.nombre || 'Sin Proyecto',
+        descripcion: e.proyectos[0]?.descripcion || '',
+        solicitado 
+      };
+    });
+
+    res.json({ success: true, data: result });
   } catch (error) {
     next(error);
   }
@@ -906,6 +1067,7 @@ router.post('/invitaciones/:id/responder', authMiddleware, async (req: AuthReque
 
 /**
  * @swagger
+<<<<<<< HEAD
  * /api/participante/eventos-proximos:
  *   get:
  *     summary: Listar eventos que aún no inician
@@ -1210,57 +1372,14 @@ router.post('/solicitudes/:id/responder', authMiddleware, async (req: AuthReques
  * @swagger
  * /api/participante/constancias:
  *   get:
- *     summary: Obtener todas las participaciones y estado de constancias
+ *     summary: Obtener las constancias del participante actual
  *     tags: [Participante]
  */
 router.get('/constancias', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
-
-    // Obtener todas las membresías del usuario en equipos que tengan proyectos y eventos
-    const participaciones = await prisma.equipo_miembros.findMany({
-      where: { user_id: BigInt(userId) },
-      include: {
-        equipos: {
-          include: {
-            proyectos: {
-              include: {
-                eventos: true
-              }
-            }
-          }
-        }
-      }
-    });
-
-    const results = await Promise.all(participaciones.map(async (p) => {
-      const proyecto = p.equipos.proyectos[0];
-      if (!proyecto) return null;
-
-      const evento = proyecto.eventos;
-      if (!evento) return null;
-
-      const constanciasData = await prisma.certificados.findMany({
-        where: { user_id: BigInt(userId), evento_id: evento.id }
-      });
-
-      return {
-        evento: {
-          id: Number(evento.id),
-          nombre: evento.nombre,
-          fecha_fin: evento.fecha_fin
-        },
-        constancias: {
-          individual: constanciasData.some(c => c.tipo === 'INDIVIDUAL'),
-          equipo: constanciasData.some(c => c.tipo === 'EQUIPO')
-        }
-      };
-    }));
-
-    res.json({ 
-      success: true, 
-      data: results.filter(r => r !== null) 
-    });
+    const result = await constanciaService.getConstanciasByUser(Number(userId));
+    res.json(result);
   } catch (error) {
     next(error);
   }
@@ -1270,7 +1389,7 @@ router.get('/constancias', authMiddleware, async (req: AuthRequest, res: Respons
  * @swagger
  * /api/participante/constancias/download/{tipo}/{eventoId}:
  *   get:
- *     summary: Descargar constancia por tipo y evento específico
+ *     summary: Descargar un certificado específico
  *     tags: [Participante]
  */
 router.get('/constancias/download/:tipo/:eventoId', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -1278,46 +1397,76 @@ router.get('/constancias/download/:tipo/:eventoId', authMiddleware, async (req: 
     const userId = req.user!.id;
     const { tipo, eventoId } = req.params;
 
-    // 1. Verificar si el evento existe
-    const evento = await prisma.eventos.findUnique({
-      where: { id: BigInt(eventoId) }
-    });
-
-    if (!evento) {
-      return res.status(404).json({ success: false, message: 'Evento no encontrado' });
-    }
-
-    // 2. Verificar si el evento terminó
-    if (new Date() < new Date(evento.fecha_fin)) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Los certificados estarán disponibles después del ' + new Date(evento.fecha_fin).toLocaleDateString() 
-      });
-    }
-
-    // 3. Buscar el certificado en la DB
-    const certificado = await prisma.certificados.findFirst({
-      where: { 
-        user_id: BigInt(userId), 
+    // 1. Intentar buscar en la base de datos primero (por si hay una personalizada)
+    const constancia = await prisma.certificados.findFirst({
+      where: {
+        user_id: BigInt(userId),
         evento_id: BigInt(eventoId),
-        tipo: tipo.toUpperCase()
+        tipo: tipo as any
       }
     });
 
-    if (!certificado || !certificado.archivo_path) {
-      return res.status(404).json({ success: false, message: 'Certificado no encontrado en el sistema' });
+    if (constancia && constancia.archivo_path) {
+      const absolutePath = path.isAbsolute(constancia.archivo_path) 
+        ? constancia.archivo_path 
+        : path.join(__dirname, '../../..', constancia.archivo_path);
+      return res.download(absolutePath);
     }
 
-    // 4. Servir el archivo
-    const fs = require('fs');
-    const path = require('path');
-    const filePath = path.join(__dirname, '..', '..', '..', certificado.archivo_path);
+    // 2. Fallback Dinámico: Generar al vuelo si el evento terminó
+    const evento = await prisma.eventos.findUnique({ where: { id: BigInt(eventoId) } });
+    if (!evento) return res.status(404).json({ success: false, message: 'Evento no encontrado' });
 
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ success: false, message: 'El archivo físico del certificado no existe' });
+    if (new Date() < new Date(evento.fecha_fin)) {
+      return res.status(403).json({ success: false, message: 'El evento aún no ha finalizado' });
     }
 
-    res.download(filePath, `Certificado_${tipo}_${evento.nombre}.pdf`);
+    // Buscar el proyecto y equipo del usuario
+    const proyecto = await prisma.proyectos.findFirst({
+      where: {
+        evento_id: BigInt(eventoId),
+        equipos: {
+          equipo_miembros: { some: { user_id: BigInt(userId) } }
+        }
+      },
+      include: {
+        equipos: {
+          include: {
+            equipo_miembros: { include: { users: true } }
+          }
+        }
+      }
+    });
+
+    if (!proyecto) return res.status(404).json({ success: false, message: 'No se encontró participación para este evento' });
+
+    // Calcular ranking para saber el logro
+    const ranking = await rankingService.calcularRanking(Number(eventoId));
+    const pos = ranking.findIndex(r => r.id === Number(proyecto.id)) + 1;
+    const textoLogro = rankingService.getTextoLogro(pos);
+
+    // Preparar payload para PdfService
+    const payload = {
+      proyecto: {
+        ...proyecto,
+        id: Number(proyecto.id),
+        equipo: proyecto.equipos ? {
+          ...proyecto.equipos,
+          id: Number(proyecto.equipos.id),
+          miembros: proyecto.equipos.equipo_miembros.map(m => ({
+            ...m,
+            id: Number(m.id),
+            user: { ...m.users, id: Number(m.users.id) }
+          }))
+        } : null
+      },
+      textoLogro,
+      nombreTitular: tipo === 'EQUIPO' ? (proyecto.equipos?.nombre || 'Equipo') : (req.user!.name || proyecto.equipos?.equipo_miembros.find(m => Number(m.user_id) === Number(userId))?.users.name || 'Participante'),
+      mostrarIntegrantes: tipo === 'EQUIPO',
+      evento: { ...evento, id: Number(evento.id) }
+    };
+
+    PdfService.generarConstancia(res, payload);
   } catch (error) {
     next(error);
   }

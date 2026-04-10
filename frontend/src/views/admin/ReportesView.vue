@@ -228,16 +228,14 @@ async function downloadPdf(type) {
     const url = window.URL.createObjectURL(
       new Blob([response.data], { type: "application/pdf" }),
     );
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute(
-      "download",
-      `Reporte_${type}_${new Date().toISOString().split("T")[0]}.pdf`,
-    );
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
+    
+    // Abrir en nueva pestaña
+    window.open(url, '_blank');
+    
+    // Limpieza opcional tras un tiempo (para dar tiempo al navegador a cargar)
+    setTimeout(() => {
+      window.URL.revokeObjectURL(url);
+    }, 1000);
   } catch (error) {
     console.error(error);
     alert("Error al generar el reporte PDF");

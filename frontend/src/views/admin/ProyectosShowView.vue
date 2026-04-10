@@ -76,9 +76,10 @@
                   <p style="font-size:.75rem;opacity:0.75;margin:.25rem 0 0">Promedio ponderado de todas las evaluaciones.</p>
                 </div>
                 
-                <div style="position:relative;z-index:10;display:flex;align-items:flex-end;gap:.5rem;margin-top:1rem" class="md:margin-top-0">
-                  <span style="font-size:3rem;font-weight:900;letter-spacing:-0.025em;line-height:1">{{ puntajeTotal }}</span>
-                  <span style="font-size:1.125rem;font-weight:500;opacity:0.75;margin-bottom:.5rem">/ 100</span>
+                <div style="position:relative;z-index:10;display:flex;align-items:center;gap:0.35rem">
+                  <span style="font-size:2.25rem;font-weight:800;letter-spacing:-0.02em">{{ puntajeTotal }}</span>
+                  <span style="font-size:1.5rem;font-weight:300;opacity:0.4;margin:0 0.125rem">/</span>
+                  <span style="font-size:1.125rem;font-weight:700;opacity:0.8;padding-top:0.25rem">100</span>
                 </div>
               </div>
 

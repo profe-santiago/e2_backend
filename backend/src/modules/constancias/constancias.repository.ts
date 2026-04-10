@@ -4,8 +4,8 @@ export class ConstanciaRepository {
   async findAll() {
     return prisma.certificados.findMany({
       include: {
-        user: true,
-        evento: true,
+        users: true,
+        eventos: true,
       },
     });
   }
@@ -13,7 +13,7 @@ export class ConstanciaRepository {
   async findById(id: number) {
     return prisma.certificados.findUnique({
       where: { id: BigInt(id) },
-      include: { user: true, evento: true },
+      include: { users: true, eventos: true },
     });
   }
 
@@ -23,7 +23,7 @@ export class ConstanciaRepository {
     
     return prisma.certificados.findMany({
       where: whereClause,
-      include: { evento: true },
+      include: { eventos: true },
     });
   }
 

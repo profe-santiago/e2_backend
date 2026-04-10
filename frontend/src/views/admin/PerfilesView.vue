@@ -43,7 +43,7 @@
                 <td style="padding-left:2rem">
                   <div style="display:flex;align-items:center;gap:.75rem">
                     <div class="user-avatar-sm">
-                      {{ perfil.nombre ? perfil.nombre.substring(0, 1).toUpperCase() : '' }}
+                      <span class="user-avatar-initials">{{ perfil.nombre ? perfil.nombre.substring(0, 1).toUpperCase() : '' }}</span>
                     </div>
                     <span style="font-weight:600">{{ perfil.nombre }}</span>
                   </div>
@@ -179,3 +179,63 @@ async function confirmDelete(perfil) {
 
 onMounted(fetchPerfiles)
 </script>
+
+<style scoped>
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+  padding: 1rem;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 1rem;
+  width: 100%;
+  max-width: 500px;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: modalIn 0.2s ease-out;
+}
+
+.modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: #111827;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #9ca3af;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: #111827;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+</style>

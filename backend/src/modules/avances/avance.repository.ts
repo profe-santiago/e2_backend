@@ -2,8 +2,19 @@ import prisma from '../../utils/prisma';
 import { StoreAvanceDto } from './avance.types';
 
 export class AvanceRepository {
-  async getProyectoIdByUser(userId: number) {
-    // Buscar el equipo del usuario directamente via equipo_miembros
+  async getProyectoIdByUser(userId: number, targetProyectoId?: number) {
+    if (targetProyectoId) {
+      // Verificar si el usuario pertenece al proyecto solicitado
+      const miembro = await prisma.equipo_miembros.findFirst({
+        where: { 
+          user_id: BigInt(userId),
+          equipos: { proyectos: { some: { id: BigInt(targetProyectoId) } } }
+        }
+      });
+      return miembro ? targetProyectoId : null;
+    }
+
+    // Comportamiento original: Buscar el primer equipo/proyecto del usuario
     const miembro = await prisma.equipo_miembros.findFirst({
       where: { user_id: BigInt(userId) },
       include: { equipos: { include: { proyectos: true } } }

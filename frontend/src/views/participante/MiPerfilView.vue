@@ -220,7 +220,7 @@ const initials = computed(() => {
 
 const avatarStyle = computed(() => {
   return !auth.user?.id || avatarFailed.value 
-    ? { background: '#e5e7eb', color: '#6b7280' }
+    ? { background: 'var(--indigo-100)', color: 'var(--indigo-700)' }
     : {}
 })
 
@@ -368,7 +368,7 @@ watch(dropdownOpen, (val) => {
 .profile-header .title {
   font-size: 1.75rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-primary);
 }
 
 .breadcrumbs {
@@ -376,22 +376,22 @@ watch(dropdownOpen, (val) => {
   align-items: center;
   gap: 0.5rem;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .breadcrumbs .current {
-  color: #4f46e5;
+  color: var(--indigo-500);
   font-weight: 500;
 }
 
 .breadcrumbs .separator {
-  color: #d1d5db;
+  color: var(--border-color);
 }
 
 /* Card General */
 .card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 0.5rem;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   margin-bottom: 2rem;
@@ -399,7 +399,7 @@ watch(dropdownOpen, (val) => {
 
 /* Overview Card */
 .overview-card {
-  padding: 3rem;
+  padding: 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -409,27 +409,29 @@ watch(dropdownOpen, (val) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
 }
 
 .avatar-wrapper {
   position: relative;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .avatar-circle {
-  width: 9rem;
-  height: 9rem;
+  width: 8rem;
+  height: 8rem;
   border-radius: 50%;
-  border: 4px solid #fff;
+  border: 4px solid var(--bg-card);
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 3rem;
+  font-size: 2.5rem;
   font-weight: 700;
   overflow: hidden;
   position: relative;
+  background: var(--card-muted);
+  color: var(--text-muted);
 }
 
 .avatar-circle img {
@@ -440,17 +442,17 @@ watch(dropdownOpen, (val) => {
 
 .avatar-edit-btn {
   position: absolute;
-  bottom: 0.5rem;
-  right: 0.5rem;
-  width: 2.25rem;
-  height: 2.25rem;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  bottom: 0.25rem;
+  right: 0.25rem;
+  width: 2rem;
+  height: 2rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #4b5563;
+  color: var(--text-secondary);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   cursor: pointer;
   z-index: 10;
@@ -458,13 +460,13 @@ watch(dropdownOpen, (val) => {
 }
 
 .avatar-edit-btn:hover {
-  background: #f8fafc;
+  background: var(--card-muted);
   transform: scale(1.05);
 }
 
 .avatar-edit-btn svg {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1.125rem;
+  height: 1.125rem;
 }
 
 .hidden-input {
@@ -478,35 +480,36 @@ watch(dropdownOpen, (val) => {
 .user-name {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #111827;
+  color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
 
 .user-email {
-  color: #6b7280;
-  margin-bottom: 1rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
 }
 
 .badge-role {
   display: inline-block;
   padding: 0.25rem 0.75rem;
-  background: #f5f3ff;
-  color: #4f46e5;
+  background: var(--card-muted);
+  color: var(--indigo-500);
   font-size: 0.75rem;
   font-weight: 600;
   border-radius: 9999px;
-  border: 1px solid #e0e7ff;
+  border: 1px solid var(--border-color);
 }
 
 /* Academic Box */
 .academic-info-box {
   width: 100%;
-  max-width: 50rem;
-  border: 1px solid #f3f4f6;
+  max-width: 42rem;
+  border: 1px solid var(--border-color);
   border-radius: 0.75rem;
-  padding: 1.5rem;
+  padding: 1.125rem;
   display: flex;
   align-items: center;
+  background: var(--card-muted);
 }
 
 .academic-section {
@@ -519,25 +522,25 @@ watch(dropdownOpen, (val) => {
 .academic-label {
   font-size: 0.875rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
 
 .academic-value {
-  color: #6b7280;
+  color: var(--text-muted);
   font-size: 0.875rem;
 }
 
 .vertical-divider {
   width: 1px;
   height: 3rem;
-  background: #f3f4f6;
+  background: var(--border-color);
 }
 
 /* Formal Cards */
 .formal-card .card-header {
   padding: 1.5rem 2rem !important;
-  border-bottom: 1px solid #e5e7eb !important;
+  border-bottom: 1px solid var(--border-color) !important;
 }
 
 .formal-card .card-header h3 {
@@ -559,7 +562,7 @@ watch(dropdownOpen, (val) => {
 
 .description-text {
   font-size: 0.875rem !important;
-  color: #4b5563 !important;
+  color: var(--text-muted) !important;
   margin-bottom: 1.25rem !important; /* Proper distance to the form */
   margin-top: 0 !important; /* Remove any top margin to bring it 'up' */
   text-align: left !important;
@@ -585,17 +588,18 @@ watch(dropdownOpen, (val) => {
 .form-group label {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-secondary);
 }
 
 .formal-control {
   width: 100%;
   padding: 0.625rem 1rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-color);
   border-radius: 0.375rem;
   font-size: 0.875rem;
   transition: border-color 0.2s;
-  background: #fff;
+  background: var(--bg-input);
+  color: var(--text-primary);
 }
 
 .formal-control:focus {
@@ -609,7 +613,7 @@ watch(dropdownOpen, (val) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #fff;
+  background: var(--bg-input);
   text-align: left;
 }
 
@@ -622,21 +626,23 @@ watch(dropdownOpen, (val) => {
   top: 100%;
   left: 0;
   right: 0;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 0.375rem;
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
   margin-top: 0.25rem;
   z-index: 50;
 }
 
-.search-box { padding: 0.5rem; border-bottom: 1px solid #f3f4f6; }
+.search-box { padding: 0.5rem; border-bottom: 1px solid var(--border-color); }
 .search-input {
   width: 100%;
   padding: 0.4rem 0.75rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-color);
   border-radius: 0.25rem;
   font-size: 0.8125rem;
+  background: var(--bg-input);
+  color: var(--text-primary);
 }
 
 .dropdown-list {
@@ -653,18 +659,18 @@ watch(dropdownOpen, (val) => {
   cursor: pointer;
 }
 
-.dropdown-list li:hover { background: #f9fafb; }
-.dropdown-list li.active { background: #f5f3ff; color: #4f46e5; font-weight: 600; }
+.dropdown-list li:hover { background: var(--card-muted); }
+.dropdown-list li.active { background: var(--card-muted); color: var(--indigo-500); font-weight: 600; }
 
 .card-footer {
   margin-top: 1.5rem;
   padding-top: 1rem;
   display: flex;
-  justify-content: flex-start;
+  justify-content: flex-end;
 }
 
 .btn-save {
-  background: #4f46e5; /* INDIGO BLUE like the other views */
+  background: var(--indigo-600);
   color: #fff;
   padding: 0.6rem 1.75rem;
   border-radius: 0.375rem;
@@ -675,7 +681,7 @@ watch(dropdownOpen, (val) => {
 }
 
 .btn-save:hover { 
-  background: #4338ca;
+  background: var(--indigo-700);
   transform: translateY(-1px);
 }
 
@@ -697,13 +703,5 @@ watch(dropdownOpen, (val) => {
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Dark Mode Overrides */
-.dark .card { background: #1f2937; border-color: #374151; }
-.dark .profile-header .title { color: #fff; }
-.dark .formal-control { background: #374151; border-color: #4b5563; color: #fff; }
-.dark .user-name { color: #fff; }
-.dark .academic-label { color: #fff; }
-.dark .academic-info-box { border-color: #374151; }
-.dark .formal-card .card-header { border-color: #374151; }
-.dark .formal-card .card-header h3 { color: #fff; }
+
 </style>

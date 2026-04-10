@@ -24,6 +24,10 @@ export class PdfService {
     );
     doc.pipe(res);
 
+    const isWinner = payload.textoLogro.includes("LUGAR");
+    const title = isWinner ? "CONSTANCIA DE LOGRO" : "CONSTANCIA DE PARTICIPACIÓN";
+    const subtitle1 = isWinner ? "Se otorga el presente reconocimiento al equipo:" : "Se otorga el presente documento al equipo:";
+
     // ─── Borde decorativo ───
     doc
       .rect(30, 20, doc.page.width - 60, doc.page.height - 40)
@@ -34,98 +38,97 @@ export class PdfService {
     doc
       .rect(40, 30, doc.page.width - 80, doc.page.height - 60)
       .lineWidth(1)
-      .strokeColor("#3949ab")
+      .strokeColor("#cbd5e1")
       .stroke();
 
     // ─── Encabezado ───
-    doc.moveDown(2);
-    doc
-      .fontSize(14)
-      .fillColor("#666")
-      .font("Helvetica")
-      .text("SISTEMA DE GESTIÓN DE PROYECTOS ACADÉMICOS", { align: "center" });
-    doc.moveDown(0.5);
-    doc
-      .fontSize(32)
-      .fillColor("#1a237e")
-      .font("Helvetica-Bold")
-      .text("CONSTANCIA", { align: "center" });
-    doc.moveDown(0.3);
-    doc
-      .fontSize(16)
-      .fillColor("#e65100")
-      .font("Helvetica-Bold")
-      .text(payload.textoLogro, { align: "center" });
-
-    // ─── Línea divisora ───
-    doc.moveDown(1);
-    const lineY = doc.y;
-    doc
-      .moveTo(120, lineY)
-      .lineTo(doc.page.width - 120, lineY)
-      .lineWidth(2)
-      .strokeColor("#1a237e")
-      .stroke();
-
-    // ─── Cuerpo ───
     doc.moveDown(1.5);
     doc
-      .fontSize(13)
-      .fillColor("#333")
+      .fontSize(12)
+      .fillColor("#64748b")
       .font("Helvetica")
-      .text("Se otorga la presente constancia a:", { align: "center" });
+      .text("SISTEMA DE GESTIÓN DE PROYECTOS", { align: "center", characterSpacing: 2 });
+    
+    doc.moveDown(1.5);
+    doc
+      .fontSize(36)
+      .fillColor("#0f172a")
+      .font("Times-Bold")
+      .text(title, { align: "center" });
+
+    doc.moveDown(0.8);
+    doc
+      .fontSize(14)
+      .fillColor("#64748b")
+      .font("Helvetica")
+      .text(subtitle1, { align: "center" });
+
+    // ─── Recipient ───
     doc.moveDown(0.8);
     doc
       .fontSize(22)
-      .fillColor("#1a237e")
+      .fillColor("#1e293b")
       .font("Helvetica-Bold")
       .text(payload.nombreTitular, { align: "center" });
-    doc.moveDown(1);
-    doc
-      .fontSize(12)
-      .fillColor("#333")
-      .font("Helvetica")
-      .text(
-        `Por su destacada participación en el evento "${payload.evento.nombre}"`,
-        { align: "center" },
-      );
-    doc.moveDown(0.3);
-    doc.text(`con el proyecto "${payload.proyecto.nombre}"`, {
-      align: "center",
-    });
 
     // ─── Integrantes ───
-    if (
-      payload.mostrarIntegrantes &&
-      payload.proyecto.equipo &&
-      payload.proyecto.equipo.miembros
-    ) {
-      doc.moveDown(1);
-      doc
-        .fontSize(11)
-        .fillColor("#555")
-        .font("Helvetica-Bold")
-        .text("Integrantes del equipo:", { align: "center" });
-      doc.moveDown(0.3);
-      doc.font("Helvetica").fontSize(10).fillColor("#444");
-      payload.proyecto.equipo.miembros.forEach((m: any) => {
-        const nombre = m.user ? m.user.name : `Miembro #${m.id}`;
-        doc.text(`• ${nombre}`, { align: "center" });
-      });
+    if (payload.mostrarIntegrantes && payload.proyecto.equipo?.miembros) {
+      doc.moveDown(0.5);
+      doc.fontSize(12).fillColor("#64748b").font("Helvetica").text(isWinner ? "Y a sus integrantes:" : "Integrantes:", { align: "center" });
+      const integrantes = payload.proyecto.equipo.miembros.map((m: any) => m.user?.name || `Miembro #${m.id}`).join(", ");
+      doc.fontSize(10).fillColor("#475569").font("Helvetica-Oblique").text(integrantes, { align: "center" });
     }
 
-    // ─── Fecha ───
-    doc.moveDown(2);
-    const fecha = new Date().toLocaleDateString("es-MX", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
+    // ─── Award / Achievement ───
+    doc.moveDown(1.2);
+    if (isWinner) {
+      doc.fontSize(13).fillColor("#64748b").font("Helvetica").text("Por haber obtenido el:", { align: "center" });
+      
+      let colorLogro = "#ca8a04"; // Gold
+      if (payload.textoLogro.includes("SEGUNDO")) colorLogro = "#64748b";
+      else if (payload.textoLogro.includes("TERCER")) colorLogro = "#b45309";
+
+      doc.moveDown(0.5);
+      doc
+        .fontSize(28)
+        .fillColor(colorLogro)
+        .font("Helvetica-Bold")
+        .text(payload.textoLogro, { align: "center", characterSpacing: 1 });
+      
+      doc.moveDown(0.5);
+      doc.fontSize(12).fillColor("#64748b").font("Helvetica").text(`Con el proyecto "${payload.proyecto.nombre}" en el evento:`, { align: "center" });
+    } else {
+      doc.fontSize(12).fillColor("#64748b").font("Helvetica").text(`Por su participación con el proyecto "${payload.proyecto.nombre}" en el evento:`, { align: "center" });
+    }
+
+    // ─── Event ───
+    doc.moveDown(0.8);
     doc
-      .fontSize(10)
-      .fillColor("#777")
-      .font("Helvetica")
-      .text(`Fecha de expedición: ${fecha}`, { align: "center" });
+      .fontSize(20)
+      .fillColor("#4f46e5")
+      .font("Helvetica-Bold")
+      .text(payload.evento.nombre, { align: "center" });
+
+    // ─── Footer Signatures ───
+    const footerY = doc.page.height - 110;
+    
+    // Fecha
+    const fecha = new Date().toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
+    doc.fontSize(10).fillColor("#94a3b8").font("Helvetica-Bold").text(`Expedido el ${fecha}`, 60, footerY - 35, { align: "center", width: doc.page.width - 120 });
+
+    // Lines
+    const leftX = 120;
+    const rightX = doc.page.width - 120 - 250;
+    
+    doc.lineWidth(1.5).strokeColor("#334155");
+    
+    // Left Sig
+    doc.moveTo(leftX, footerY).lineTo(leftX + 250, footerY).stroke();
+    doc.fontSize(12).fillColor("#1e293b").font("Helvetica-Bold").text("Director del Evento", leftX, footerY + 10, { width: 250, align: "center" });
+
+    // Right Sig
+    doc.moveTo(rightX, footerY).lineTo(rightX + 250, footerY).stroke();
+    doc.fontSize(12).fillColor("#1e293b").font("Helvetica-Bold").text("Comité Evaluador", rightX, footerY + 10, { width: 250, align: "center" });
 
     doc.end();
   }

@@ -17,8 +17,8 @@
               <svg style="width:1.5rem;height:1.5rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
             </div>
             <div>
-              <h3 class="card-title">Nuevo Registro</h3>
-              <p class="card-subtitle">Documenta el progreso diario.</p>
+              <h3 class="card-title">{{ isEditing ? 'Editar Registro' : 'Nuevo Registro' }}</h3>
+              <p class="card-subtitle">{{ isEditing ? 'Modifica los detalles del avance.' : 'Documenta el progreso diario.' }}</p>
             </div>
           </div>
           
@@ -48,9 +48,14 @@
               <button type="submit" class="btn btn-publish" :disabled="saving">
                 <div v-if="saving" class="spinner-white" style="width:1.25rem;height:1.25rem"></div>
                 <template v-else>
-                  <svg style="width:1.25rem;height:1.25rem;margin-right:0.75rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                  <span>Publicar Avance</span>
+                  <svg v-if="!isEditing" style="width:1.25rem;height:1.25rem;margin-right:0.75rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                  <svg v-else style="width:1.25rem;height:1.25rem;margin-right:0.75rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  <span>{{ isEditing ? 'Guardar Cambios' : 'Publicar Avance' }}</span>
                 </template>
+              </button>
+              
+              <button v-if="isEditing" type="button" @click="cancelEdit" class="btn-cancel-edit">
+                Cancelar edición
               </button>
             </form>
           </div>
@@ -92,9 +97,14 @@
                     <span class="item-day-month">{{ getDayMonth(a.fecha) }}</span>
                     <span class="item-time-badge">{{ getTime(a.fecha) }}</span>
                   </div>
-                  <button v-if="canDelete(a)" @click="confirmDelete(a.id)" class="btn-delete-tiny">
-                    <svg style="width:1rem;height:1rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                  </button>
+                  <div class="item-actions">
+                    <button v-if="canDelete(a)" @click="startEdit(a)" class="btn-action-tiny btn-edit-tiny" title="Editar">
+                      <svg style="width:1rem;height:1rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </button>
+                    <button v-if="canDelete(a)" @click="confirmDelete(a.id)" class="btn-action-tiny btn-delete-tiny" title="Eliminar">
+                      <svg style="width:1rem;height:1rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                  </div>
                 </div>
                 <div class="item-text text-secondary">{{ a.descripcion }}</div>
               </div>
@@ -117,15 +127,20 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import api from '../../services/api'
 import { useAuthStore } from '../../stores/auth'
 
+const route = useRoute()
 const auth = useAuthStore()
+const proyectoId = route.query.proyectoId || null
 const avances = ref([])
 const loading = ref(true)
 const saving = ref(false)
-const form = ref({ descripcion: '', fecha: new Date().toISOString().split('T')[0] })
+const isEditing = ref(false)
+const editingId = ref(null)
+const form = ref({ descripcion: '' })
 
 // Computed para mostrar la fecha estilo Laravel
 const displayDate = computed(() => {
@@ -152,7 +167,9 @@ const getTime = d => {
 async function fetchAvances() {
   try {
     loading.value = true
-    const r = await api.get('/participante/avances')
+    const params = {}
+    if (proyectoId) params.proyectoId = proyectoId
+    const r = await api.get('/participante/avances', { params })
     avances.value = r.data.data.avances || []
   } catch (e) {
     console.error(e)
@@ -164,10 +181,18 @@ async function fetchAvances() {
 async function save() {
   try {
     saving.value = true
-    // El backend espera descripcion y fecha
-    await api.post('/participante/avances', {
-      descripcion: form.value.descripcion
-    })
+    if (isEditing.value) {
+      await api.put(`/participante/avances/${editingId.value}`, {
+        descripcion: form.value.descripcion
+      })
+      isEditing.value = false
+      editingId.value = null
+    } else {
+      await api.post('/participante/avances', {
+        descripcion: form.value.descripcion,
+        proyectoId: proyectoId
+      })
+    }
     form.value.descripcion = ''
     await fetchAvances()
   } catch (e) {
@@ -175,6 +200,19 @@ async function save() {
   } finally {
     saving.value = false
   }
+}
+
+function startEdit(a) {
+  isEditing.value = true
+  editingId.value = a.id
+  form.value.descripcion = a.descripcion
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+function cancelEdit() {
+  isEditing.value = false
+  editingId.value = null
+  form.value.descripcion = ''
 }
 
 function canDelete(a) {
@@ -198,8 +236,8 @@ onMounted(fetchAvances)
 <style scoped>
 .page-container { max-width: 1400px; margin: 0 auto; padding: 0 2rem; }
 .page-header { margin-bottom: 1.5rem; padding-top: 1rem; }
-.title { font-size: 2.25rem; font-weight: 800; color: #1e293b; letter-spacing: -0.04em; line-height: 1; }
-.subtitle { color: #64748b; font-size: 1rem; margin-top: 0.5rem; font-weight: 500; }
+.title { font-size: 2.25rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.04em; line-height: 1; }
+.subtitle { color: var(--text-muted); font-size: 1rem; margin-top: 0.5rem; font-weight: 500; }
 
 .bitacora-grid { display: grid; grid-template-columns: 290px 1fr; gap: 1.5rem; align-items: start; }
 .sidebar { width: 100%; }
@@ -212,39 +250,39 @@ onMounted(fetchAvances)
 /* Sidebar Card */
 .sidebar { width: 100%; align-self: flex-start; height: fit-content; }
 .formal-card { 
-  background: white; border-radius: 1rem; border: 1px solid #e2e8f0; 
+  background: var(--bg-card); border-radius: 1rem; border: 1px solid var(--border-color); 
   overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); 
   height: auto !important; min-height: auto !important; 
   display: flex; flex-direction: column;
 }
 .formal-body { padding: 0 1rem 1rem 1rem; }
 .card-header-formal { padding: 1rem 1rem 0.625rem; display: flex; align-items: center; gap: 0.75rem; }
-.icon-box { width: 2.5rem; height: 2.5rem; background: #f5f3ff; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; color: #4f46e5; }
-.card-title { font-size: 1.125rem; font-weight: 800; color: #1e293b; letter-spacing: -0.02em; line-height: 1; }
-.card-subtitle { font-size: 0.7rem; color: #64748b; font-weight: 600; margin-top: 0.2rem; }
+.icon-box { width: 2.5rem; height: 2.5rem; background: var(--bg-card); border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; color: var(--indigo-500); border: 1px solid var(--border-color); }
+.card-title { font-size: 1.125rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1; }
+.card-subtitle { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; margin-top: 0.2rem; }
 
-.formal-label { display: block; font-size: 0.75rem; font-weight: 800; color: #64748b; margin-bottom: 0.5rem; letter-spacing: 0.05em; }
+.formal-label { display: block; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.05em; }
 
 .display-box { 
   display: flex; align-items: center; gap: 0.75rem; 
-  padding: 0.75rem 1rem; background: #f8fafc; 
-  border-radius: 0.75rem; border: 1px solid #e2e8f0;
-  color: #475569; font-weight: 700; font-size: 0.875rem;
+  padding: 0.75rem 1rem; background: var(--card-muted); 
+  border-radius: 0.75rem; border: 1px solid var(--border-color);
+  color: var(--text-secondary); font-weight: 700; font-size: 0.875rem;
 }
 
-.textarea-wrapper { border: 1.5px solid #e2e8f0; border-radius: 1rem; overflow: hidden; transition: all 0.2s; }
-.textarea-wrapper:focus-within { border-color: #4f46e5; box-shadow: 0 0 0 4px rgba(79,70,229,0.1); }
+.textarea-wrapper { border: 1.5px solid var(--border-color); border-radius: 1rem; overflow: hidden; transition: all 0.2s; }
+.textarea-wrapper:focus-within { border-color: var(--indigo-500); box-shadow: 0 0 0 4px rgba(79,70,229,0.1); }
 
 .formal-textarea { 
   width: 100%; padding: 0.875rem; border: none; resize: none; 
-  font-size: 0.9375rem; color: #1e293b; background: white;
+  font-size: 0.9375rem; color: var(--text-primary); background: var(--bg-card);
   min-height: 120px; line-height: 1.5;
 }
 .formal-textarea:focus { outline: none; }
 .formal-textarea::placeholder { color: #94a3b8; }
 
 .btn-publish {
-  width: 100%; height: 3rem; background: #4f46e5; color: white;
+  width: 100%; height: 3rem; background: var(--indigo-600); color: white;
   border-radius: 0.75rem; font-weight: 700; font-size: 0.9rem;
   display: flex; align-items: center; justify-content: center;
   border: none; cursor: pointer; transition: all 0.2s;
@@ -255,29 +293,29 @@ onMounted(fetchAvances)
 .btn-publish:disabled { opacity: 0.7; cursor: not-allowed; }
 
 /* Timeline Main */
-.timeline-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2rem; padding: 1.25rem 0 0.5rem; border-bottom: 1px solid var(--border); }
-.header-left { display: flex; align-items: center; color: #4f46e5; }
-.timeline-title { font-size: 1.125rem; font-weight: 800; letter-spacing: -0.02em; color: #1e293b; }
-.timeline-meta { font-size: 0.8125rem; color: #94a3b8; font-weight: 700; }
+.timeline-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2rem; padding: 1.25rem 0 0.5rem; border-bottom: 1px solid var(--border-color); }
+.header-left { display: flex; align-items: center; color: var(--indigo-500); }
+.timeline-title { font-size: 1.125rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text-primary); }
+.timeline-meta { font-size: 0.8125rem; color: var(--text-muted); font-weight: 700; }
 
 /* Empty State */
 .empty-timeline-card {
-  padding: 5rem 2rem; border-radius: 1.5rem; border: 2px dashed #e2e8f0;
+  padding: 5rem 2rem; border-radius: 1.5rem; border: 2px dashed var(--border-color);
   display: flex; flex-direction: column; align-items: center; text-align: center;
-  background: rgba(248, 250, 252, 0.5);
+  background: var(--card-muted);
 }
-.empty-circle { width: 4.5rem; height: 4.5rem; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; }
-.empty-title { font-size: 1.25rem; font-weight: 700; color: #1e293b; margin-bottom: 0.75rem; }
-.empty-desc { font-size: 0.9375rem; color: #64748b; max-width: 320px; line-height: 1.6; }
+.empty-circle { width: 4.5rem; height: 4.5rem; background: var(--bg-card); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; border: 1px solid var(--border-color); }
+.empty-title { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem; }
+.empty-desc { font-size: 0.9375rem; color: var(--text-muted); max-width: 320px; line-height: 1.6; }
 
 /* Timeline Track */
 .timeline-track { display: flex; flex-direction: column; padding-left: 0.5rem; margin-top: 1rem; }
 .timeline-item { display: flex; gap: 2rem; }
 .item-visual { display: flex; flex-direction: column; align-items: center; width: 2.5rem; flex-shrink: 0; }
 .item-bubble { 
-  width: 2rem; height: 2rem; background: #f5f3ff; border-radius: 50%; 
+  width: 2rem; height: 2rem; background: var(--bg-card); border-radius: 50%; 
   display: flex; align-items: center; justify-content: center; 
-  color: #4f46e5; border: 1px solid #e0e7ff; z-index: 10; margin-top: 0.2rem;
+  color: var(--indigo-500); border: 1px solid var(--border-color); z-index: 10; margin-top: 0.2rem;
   position: relative; box-shadow: 0 2px 4px -1px rgba(79, 70, 229, 0.1);
 }
 /* La "colita" de la burbuja que apunta a la tarjeta */
@@ -287,40 +325,49 @@ onMounted(fetchAvances)
   border-left: 8px solid #f1f5f9; /* Color similar al borde de la tarjeta o del fondo */
   display: none; /* Empezaremos ocultándola si no queda perfecta, pero lo intentaremos con un pseudo-elemento de fondo */
 }
-.item-line { flex-grow: 1; width: 2px; background: #f1f5f9; margin-top: 0; margin-bottom: 0; }
+.item-line { flex-grow: 1; width: 2px; background: var(--border-color); margin-top: 0; margin-bottom: 0; }
 .timeline-item:last-child .item-line { display: none; }
 
 .item-body { 
   flex-grow: 1; padding: 0.75rem 1rem; margin-bottom: 1.25rem; border-radius: 0.75rem;
-  transition: all 0.2s; border: 1px solid #f1f5f9; background: white;
+  transition: all 0.2s; border: 1px solid var(--border-color); background: var(--bg-card);
   position: relative; box-shadow: 0 2px 8px -4px rgba(0, 0, 0, 0.05);
 }
 .item-body::before {
   content: ''; position: absolute; left: -8px; top: 0.625rem;
   border-top: 6px solid transparent; border-bottom: 6px solid transparent;
-  border-right: 8px solid white; z-index: 5;
+  border-right: 8px solid var(--bg-card); z-index: 5;
 }
 .item-body::after {
   content: ''; position: absolute; left: -9px; top: 0.625rem;
   border-top: 6px solid transparent; border-bottom: 6px solid transparent;
-  border-right: 9px solid #f1f5f9; z-index: 4;
+  border-right: 9px solid var(--border-color); z-index: 4;
 }
 .item-body:hover { transform: translateX(5px); border-color: #e0e7ff; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); }
 
 .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
 .item-date-wrapper { display: flex; align-items: center; gap: 1rem; }
-.item-day-month { font-size: 0.9375rem; font-weight: 800; color: #1e293b; }
-.item-time-badge { background: #e2e8f0; color: #475569; font-size: 0.65rem; font-weight: 800; padding: 0.125rem 0.625rem; border-radius: 4px; text-transform: uppercase; border: 1px solid #cbd5e1; }
+.item-day-month { font-size: 0.9375rem; font-weight: 800; color: var(--text-primary); }
+.item-time-badge { background: var(--border-color); color: var(--text-primary); font-size: 0.65rem; font-weight: 800; padding: 0.125rem 0.625rem; border-radius: 4px; text-transform: uppercase; border: 1px solid var(--border-color); }
 
-.btn-delete-tiny { background: none; border: none; color: #cbd5e1; cursor: pointer; padding: 0.5rem; border-radius: 0.625rem; transition: all 0.2s; }
-.btn-delete-tiny:hover { color: #ef4444; background: #fef2f2; }
+.item-actions { display: flex; gap: 0.25rem; }
+.btn-action-tiny { background: none; border: none; color: #cbd5e1; cursor: pointer; padding: 0.5rem; border-radius: 0.625rem; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+.btn-edit-tiny:hover { color: var(--indigo-500); background: var(--card-muted); }
+.btn-delete-tiny:hover { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
 
-.item-text { font-size: 0.875rem; color: #475569; line-height: 1.5; white-space: pre-wrap; }
+.btn-cancel-edit { 
+  width: 100%; margin-top: 0.75rem; background: none; border: none; 
+  color: #64748b; font-size: 0.8125rem; font-weight: 700; cursor: pointer;
+  text-decoration: underline; transition: color 0.2s;
+}
+.btn-cancel-edit:hover { color: #1e293b; }
+
+.item-text { font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5; white-space: pre-wrap; }
 
 /* Footer Item */
 .footer-item { margin-top: -1rem; margin-bottom: 2rem; }
-.item-dot-gray { width: 0.75rem; height: 0.75rem; background: #cbd5e1; border-radius: 50%; margin-top: 0.25rem; }
-.footer-text { font-size: 0.75rem; font-weight: 800; color: #94a3b8; letter-spacing: 0.05em; text-transform: uppercase; padding-top: 0.125rem; }
+.item-dot-gray { width: 0.75rem; height: 0.75rem; background: var(--border-color); border-radius: 50%; margin-top: 0.25rem; }
+.footer-text { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase; padding-top: 0.125rem; }
 
 .spinner-white { border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
