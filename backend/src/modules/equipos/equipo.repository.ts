@@ -11,11 +11,16 @@ export class EquipoRepository {
     const offset = (page - 1) * limit;
 
     const where: any = {};
-    if (search) {
+    if (search && search.trim() !== "") {
       where.nombre = { contains: search };
     }
+    
     if (evento_id) {
-      where.proyectos = { some: { evento_id: BigInt(evento_id) } };
+      where.proyectos = {
+        some: {
+          evento_id: BigInt(evento_id)
+        }
+      };
     }
 
     const [count, rows] = await Promise.all([
@@ -24,7 +29,11 @@ export class EquipoRepository {
         where,
         include: {
           proyectos: {
-            include: { eventos: true },
+            where: evento_id ? { evento_id: BigInt(evento_id) } : {},
+            include: {
+              eventos: true,
+            },
+            orderBy: { created_at: "desc" }
           },
           equipo_miembros: {
             include: {

@@ -132,7 +132,7 @@
             <div v-else-if="w.key === 'list_eventos'" class="card card-full">
               <div class="card-header">
                 <span>Próximos Eventos</span>
-                <router-link to="/admin/eventos" style="font-size:.875rem;color:#4f46e5;text-decoration:none;font-weight:600">Ver todo</router-link>
+                <router-link to="/admin/eventos" style="font-size:.875rem;color:var(--indigo-600);text-decoration:none;font-weight:600">Ver todo</router-link>
               </div>
               <div class="card-body" style="height:18rem;overflow-y:auto">
                 <div v-if="!data.eventos_activos?.length" class="empty-state"><p>No hay eventos programados.</p></div>
@@ -224,8 +224,18 @@ function getChartOptions(key) {
   if (!isRound) {
     base.indexAxis = isHorizontal ? 'y' : 'x'
     base.scales = {
-      x: { grid: { display: false } },
-      y: { beginAtZero: true, grid: { color: '#f1f5f9', borderDash: [4,4] } }
+      x: { 
+        grid: { display: false }, 
+        ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#6b7280' } 
+      },
+      y: { 
+        beginAtZero: true, 
+        grid: { 
+          color: getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim() || '#e5e7eb', 
+          borderDash: [4,4] 
+        }, 
+        ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#6b7280' } 
+      }
     }
   }
 
@@ -236,9 +246,16 @@ function getChartOptions(key) {
 // Chart data computeds
 const evalChartData = computed(() => {
   if (data.value.proyectosEvaluados == null) return null
+  const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
   return {
     labels: ['Evaluados', 'Pendientes'],
-    datasets: [{ label: 'Proyectos', data: [data.value.proyectosEvaluados, data.value.proyectosPendientes], backgroundColor: ['#4f46e5','#94a3b8'], borderRadius: 4, barPercentage: .6 }]
+    datasets: [{ 
+      label: 'Proyectos', 
+      data: [data.value.proyectosEvaluados, data.value.proyectosPendientes], 
+      backgroundColor: ['#6366f1', isDark ? '#94a3b8' : '#6b7280'], 
+      borderRadius: 4, 
+      barPercentage: .6 
+    }]
   }
 })
 
@@ -294,19 +311,15 @@ async function savePreferences() {
 async function downloadReport() {
   try {
     const res = await api.get('/admin/dashboard/report', { responseType: 'blob' })
-    const disposition = res.headers['content-disposition'] || ''
-    const filenameMatch = disposition.match(/filename="?(.+?)"?(?:;|$)/)
-    const fallbackName = `Reporte_Dashboard_${new Date().toISOString().split('T')[0]}.pdf`
-    const filename = filenameMatch ? filenameMatch[1] : fallbackName
-
     const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', filename)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
+    
+    // Abrir en nueva pestaña
+    window.open(url, '_blank')
+    
+    // Revocar después de un tiempo
+    setTimeout(() => {
+      window.URL.revokeObjectURL(url)
+    }, 1000)
   } catch (err) {
     console.error('Error downloading PDF:', err)
     alert('Error al generar el PDF del Dashboard')
@@ -329,20 +342,20 @@ onUnmounted(() => document.removeEventListener('click', closeCustomizer))
 .customizer-dropdown {
   position: absolute; right: 0; top: 100%; margin-top: .5rem;
   width: 20rem; /* w-80 */
-  background: var(--card-bg, #fff); border: 1px solid var(--border, #e5e7eb);
+  background: var(--bg-card); border: 1px solid var(--border-color);
   border-radius: .75rem; overflow: hidden; z-index: 50;
   box-shadow: 0 10px 40px rgba(0,0,0,.15);
 }
-.customizer-header { padding: 1rem 1.25rem; background: var(--card-muted, #f9fafb); border-bottom: 1px solid var(--border, #e5e7eb); }
+.customizer-header { padding: 1rem 1.25rem; background: var(--card-muted); border-bottom: 1px solid var(--border-color); }
 .customizer-header h3 { font-size: .875rem; font-weight: 700; color: var(--text-primary); }
 .customizer-body { padding: 1rem 1.25rem; max-height: 400px; overflow-y: auto; }
 .customizer-section-title { font-size: .7rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: .05em; margin-bottom: .5rem; }
 .customizer-item { display: flex; align-items: center; justify-content: space-between; padding: .5rem .75rem; border-radius: .5rem; margin-bottom: .25rem; }
-.customizer-item:hover { background: var(--card-muted, #f9fafb); }
+.customizer-item:hover { background: var(--card-muted); }
 .customizer-item label { display: flex; align-items: center; gap: .5rem; font-size: .875rem; color: var(--text-secondary); cursor: pointer; }
-.customizer-item input[type="checkbox"] { accent-color: #4f46e5; width: 1rem; height: 1rem; }
-.customizer-select { padding: .25rem .5rem; font-size: .75rem; border: 1px solid var(--border, #e5e7eb); border-radius: .375rem; background: var(--card-bg, #fff); color: var(--text-secondary); }
-.customizer-footer { padding: 1rem 1.25rem; background: var(--card-muted, #f9fafb); border-top: 1px solid var(--border, #e5e7eb); }
+.customizer-item input[type="checkbox"] { accent-color: var(--indigo-500); width: 1rem; height: 1rem; }
+.customizer-select { padding: .25rem .5rem; font-size: .75rem; border: 1px solid var(--border-color); border-radius: .375rem; background: var(--bg-input); color: var(--text-secondary); }
+.customizer-footer { padding: 1rem 1.25rem; background: var(--card-muted); border-top: 1px solid var(--border-color); }
 
 .dashboard-grid {
   display: grid;

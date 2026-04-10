@@ -30,7 +30,10 @@ const routes = [
   { path: '/admin/mi-perfil', name: 'AdminMiPerfil', component: () => import('../views/admin/MiPerfilView.vue'), meta: { role: 'Admin' } },
   // Juez
   { path: '/juez/dashboard', name: 'JuezDashboard', component: () => import('../views/juez/DashboardView.vue'), meta: { role: 'Juez' } },
+  { path: '/juez/historial', name: 'JuezHistorial', component: () => import('../views/juez/HistorialView.vue'), meta: { role: 'Juez' } },
+  { path: '/juez/eventos/:id', name: 'JuezEvento', component: () => import('../views/juez/EventoView.vue'), meta: { role: 'Juez' } },
   { path: '/juez/evaluar/:proyectoId', name: 'Evaluacion', component: () => import('../views/juez/EvaluacionView.vue'), meta: { role: 'Juez' } },
+  { path: '/juez/perfil', name: 'JuezMiPerfil', component: () => import('../views/juez/MiPerfilView.vue'), meta: { role: 'Juez' } },
   // Participante
   { path: '/participante/dashboard', name: 'ParticipanteDashboard', component: () => import('../views/participante/DashboardView.vue'), meta: { role: 'Participante' } },
   { path: '/participante/perfil', name: 'MiPerfil', component: () => import('../views/participante/MiPerfilView.vue'), meta: { role: 'Participante' } },
@@ -38,7 +41,11 @@ const routes = [
   { path: '/participante/equipos/crear', name: 'CrearEquipo', component: () => import('../views/participante/EquipoCreateView.vue'), meta: { role: 'Participante' } },
   { path: '/participante/equipos/editar/:id', name: 'EditarEquipo', component: () => import('../views/participante/EquipoEditView.vue'), meta: { role: 'Participante' } },
   { path: '/participante/equipos/unirse', name: 'UnirseEquipo', component: () => import('../views/participante/EquipoJoinView.vue'), meta: { role: 'Participante' } },
+  { path: '/participante/equipos/:id/solicitar', name: 'SolicitarEquipo', component: () => import('../views/participante/EquipoSolicitudView.vue'), meta: { role: 'Participante' } },
+  { path: '/participante/equipos/:id/solicitudes', name: 'EquipoSolicitudes', component: () => import('../views/participante/EquipoSolicitudesView.vue'), meta: { role: 'Participante' } },
   { path: '/participante/bitacora', name: 'Bitacora', component: () => import('../views/participante/BitacoraView.vue'), meta: { role: 'Participante' } },
+  { path: '/participante/certificados', name: 'ParticipanteCertificados', component: () => import('../views/participante/CertificadosView.vue'), meta: { role: 'Participante' } },
+  { path: '/participante/resultados', name: 'ParticipanteResultados', component: () => import('../views/participante/ResultadosView.vue'), meta: { role: 'Participante' } },
   // 404
   { path: '/:pathMatch(.*)*', name: 'NotFound', component: () => import('../views/NotFoundView.vue') }
 ]

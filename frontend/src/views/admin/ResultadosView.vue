@@ -152,7 +152,7 @@
                 </td>
                 <td style="text-align:right">
                   <button @click="btnDescargar(item, idx + 1)" class="table-download-btn">
-                    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     Constancia
                   </button>
                 </td>
@@ -373,9 +373,11 @@ async function btnDescargar(proyecto, posicion) {
 .table-row-hover:hover { background: #f9fafb; transition: background 0.2s; }
 .table-row-hover { border-bottom: 1px solid var(--border, #f3f4f6); }
 .table-score-pill { display: inline-flex; align-items: center; padding: .25rem .75rem; border-radius: 9999px; background: #f3f4f6; color: var(--text-primary); font-size: .875rem; font-weight: 700; }
-.table-download-btn { font-size: .75rem; color: #4f46e5; font-weight: 700; display: inline-flex; align-items: center; gap: .25rem; background: none; border: none; cursor: pointer; text-decoration: none; padding: .5rem; border-radius: .5rem; transition: background 0.2s; }
-.table-download-btn svg { width: 1rem; height: 1rem; }
-.table-download-btn:hover { background: #e0e7ff; color: #3730a3; }
+.table-download-btn { font-size: .75rem; color: #4f46e5; font-weight: 700; display: inline-flex; align-items: center; gap: .25rem; background: none; border: none; cursor: pointer; text-decoration: none; padding: .25rem .5rem; border-radius: .5rem; transition: all 0.2s; }
+.dark .table-download-btn { color: #818cf8; }
+.table-download-btn svg { width: 1.125rem; height: 1.125rem; }
+.table-download-btn:hover { color: #3730a3; text-decoration: underline; }
+.dark .table-download-btn:hover { color: #a5b4fc; }
 
 /* ANIMATIONS */
 @keyframes pulse-slow {

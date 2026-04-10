@@ -75,6 +75,7 @@ app.use('/api/admin/reportes', reportesRouter);
 app.use('/api/juez', juezRouter);
 app.use('/api/participante/avances', avanceRouter);
 app.use('/api/participante/invitaciones', invitacionRouter);
+app.use('/api/participante/resultados', resultadosRouter);
 app.use('/api/participante', participanteDashboardRouter);
 
 // Swagger Documentation Route

@@ -18,15 +18,15 @@ export class EquipoService {
       ...e,
       id: Number(e.id),
       proyectos: undefined,
-      proyecto: e.proyectos && e.proyectos.length > 0 ? {
+      proyecto: (e.proyectos && e.proyectos.length > 0) ? {
         ...e.proyectos[0],
         id: Number(e.proyectos[0].id),
         equipo_id: Number(e.proyectos[0].equipo_id),
         evento_id: Number(e.proyectos[0].evento_id),
-        evento: e.proyectos[0].eventos ? {
+        evento: (e.proyectos[0].eventos) ? {
           ...e.proyectos[0].eventos,
           id: Number(e.proyectos[0].eventos.id)
-        } : null,
+        } : null
       } : null,
       participantes: e.equipo_miembros.map((em: any) => ({
         id: Number(em.users.id),
@@ -84,6 +84,16 @@ export class EquipoService {
           id: Number(equipo.proyectos[0].eventos.id)
         } : null,
       } : null,
+      todos_los_proyectos: (equipo.proyectos || []).map((p: any) => ({
+        ...p,
+        id: Number(p.id),
+        equipo_id: Number(p.id),
+        evento_id: Number(p.evento_id),
+        evento: p.eventos ? {
+          ...p.eventos,
+          id: Number(p.eventos.id)
+        } : null
+      })),
       participantes: equipo.equipo_miembros.map((em: any) => ({
         id: Number(em.users.id),
         user_id: Number(em.users.id),
@@ -130,6 +140,11 @@ export class EquipoService {
     );
     if (isAlreadyMember) {
       throw { status: 400, message: 'El participante ya es miembro de este equipo.' };
+    }
+
+    // 2. Check if team is full (Max 5 members)
+    if (equipo.equipo_miembros.length >= 5) {
+      throw { status: 400, message: 'El equipo ya ha alcanzado el límite máximo de 5 integrantes.' };
     }
 
     // 2. Check if user is already in ANOTHER team for the SAME event

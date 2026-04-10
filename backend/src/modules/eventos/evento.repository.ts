@@ -8,11 +8,15 @@ export class EventoRepository {
 
     const [count, rows] = await Promise.all([
       prisma.eventos.count(),
-      prisma.eventos.findMany({
-        orderBy: { created_at: 'desc' },
-        skip: offset,
-        take: limit,
-      }),
+      // Ordenamos: primero los que NO han terminado (fecha_fin >= hoy) 
+      // y al final los que ya terminaron.
+      prisma.$queryRaw<any[]>`
+        SELECT * FROM eventos 
+        ORDER BY 
+          CASE WHEN fecha_fin >= NOW() THEN 0 ELSE 1 END ASC,
+          CASE WHEN fecha_fin >= NOW() THEN fecha_inicio ELSE fecha_fin END ASC
+        LIMIT ${limit} OFFSET ${offset}
+      `,
     ]);
 
     return { count, rows };
@@ -37,6 +41,7 @@ export class EventoRepository {
         descripcion: data.descripcion,
         fecha_inicio: new Date(data.fecha_inicio),
         fecha_fin: new Date(data.fecha_fin),
+        max_jueces: data.max_jueces || 5,
         created_at: new Date(),
         updated_at: new Date(),
       },
@@ -49,6 +54,7 @@ export class EventoRepository {
     if (data.descripcion !== undefined) updateData.descripcion = data.descripcion;
     if (data.fecha_inicio) updateData.fecha_inicio = new Date(data.fecha_inicio);
     if (data.fecha_fin) updateData.fecha_fin = new Date(data.fecha_fin);
+    if (data.max_jueces) updateData.max_jueces = data.max_jueces;
 
     return prisma.eventos.update({
       where: { id: BigInt(id) },
@@ -75,6 +81,26 @@ export class EventoRepository {
         })),
       });
     }
+  }
+
+  async addJuez(eventoId: number, userId: number) {
+    return prisma.evento_jueces.create({
+      data: {
+        evento_id: BigInt(eventoId),
+        user_id: BigInt(userId),
+      },
+    });
+  }
+
+  async removeJuez(eventoId: number, userId: number) {
+    return prisma.evento_jueces.delete({
+      where: {
+        evento_id_user_id: {
+          evento_id: BigInt(eventoId),
+          user_id: BigInt(userId),
+        },
+      },
+    });
   }
 
   async getAvailableJueces() {

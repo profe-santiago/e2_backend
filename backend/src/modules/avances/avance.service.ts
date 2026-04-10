@@ -4,9 +4,9 @@ import { StoreAvanceDto } from './avance.types';
 const avanceRepository = new AvanceRepository();
 
 export class AvanceService {
-  async getAvances(userId: number) {
-    const proyectoId = await avanceRepository.getProyectoIdByUser(userId);
-    if (!proyectoId) throw { status: 400, message: 'No tienes proyecto.' };
+  async getAvances(userId: number, proyectoIdParam?: number) {
+    const proyectoId = await avanceRepository.getProyectoIdByUser(userId, proyectoIdParam);
+    if (!proyectoId) throw { status: 400, message: 'No tienes acceso a este proyecto o no existe.' };
 
     const avances = await avanceRepository.getAllByProyectoId(proyectoId);
     
@@ -24,9 +24,9 @@ export class AvanceService {
     };
   }
 
-  async storeAvance(userId: number, dto: StoreAvanceDto) {
-    const proyectoId = await avanceRepository.getProyectoIdByUser(userId);
-    if (!proyectoId) throw { status: 400, message: 'No tienes proyecto para registrar avances.' };
+  async storeAvance(userId: number, dto: StoreAvanceDto, proyectoIdParam?: number) {
+    const proyectoId = await avanceRepository.getProyectoIdByUser(userId, proyectoIdParam);
+    if (!proyectoId) throw { status: 400, message: 'No tienes proyecto seleccionado o acceso al mismo.' };
 
     const avance = await avanceRepository.create(proyectoId, dto);
     return {

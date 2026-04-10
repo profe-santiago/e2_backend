@@ -1,6 +1,6 @@
 <template>
   <div class="app-wrapper" :class="{ dark: isDark }">
-    <div class="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-900">
+    <div class="flex h-screen overflow-hidden">
       <!-- SIDEBAR -->
       <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
         class="sidebar">
@@ -88,11 +88,24 @@
 
               <!-- Juez Links -->
               <template v-if="auth.isJuez">
-                <li><p class="nav-section-label">Juez</p></li>
+                <li><p class="nav-section-label">Evaluación</p></li>
                 <li>
-                  <router-link to="/juez/dashboard" class="nav-link" :class="{ active: $route.path.includes('/juez/') }">
+                  <router-link to="/juez/dashboard" class="nav-link" :class="{ active: $route.name === 'JuezDashboard' || $route.name === 'JuezEvento' || $route.name === 'Evaluacion' }">
                     <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     Sala de Evaluación
+                  </router-link>
+                </li>
+                <li>
+                  <router-link to="/juez/historial" class="nav-link" :class="{ active: $route.name === 'JuezHistorial' }">
+                    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Historial de Eventos
+                  </router-link>
+                </li>
+                <li><p class="nav-section-label">Cuenta</p></li>
+                <li>
+                  <router-link to="/juez/perfil" class="nav-link" :class="{ active: $route.path.includes('perfil') }">
+                    <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Mi Perfil
                   </router-link>
                 </li>
               </template>
@@ -101,10 +114,31 @@
               <template v-if="auth.isParticipante">
                 <li><p class="nav-section-label">Participación</p></li>
                 <li>
+                  <router-link to="/participante/resultados" class="nav-link" :class="{ active: $route.path.includes('resultados') }">
+                    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    Resultados
+                  </router-link>
+                </li>
+                <li>
+                  <router-link to="/participante/certificados" class="nav-link" :class="{ active: $route.path.includes('certificados') }">
+                    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+                    Certificados
+                  </router-link>
+                </li>
+                <li><p class="nav-section-label">Cuenta</p></li>
+                <li>
                   <router-link to="/participante/perfil" class="nav-link" :class="{ active: $route.path.includes('perfil') }">
-                    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     Mi Perfil
                   </router-link>
+                </li>
+
+                <!-- Botón de Inscripción (Moradito) -->
+                <li style="margin-top:1.5rem; padding: 0 1rem">
+                  <a href="javascript:void(0)" @click="handleEnrollClick" class="btn-enroll-sidebar">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                    Inscribirse
+                  </a>
                 </li>
               </template>
             </ul>
@@ -199,6 +233,7 @@ const dashboardRoute = computed(() => auth.dashboardRoute)
 const profileRoute = computed(() => {
   if (auth.isAdmin) return '/admin/mi-perfil'
   if (auth.isParticipante) return '/participante/perfil'
+  if (auth.isJuez) return '/juez/perfil'
   return '/login'
 })
 
@@ -220,6 +255,14 @@ function toggleTheme() {
 function handleLogout() {
   auth.logout()
   router.push('/login')
+}
+
+function handleEnrollClick() {
+  sidebarOpen.value = false
+  router.push({ 
+    path: '/participante/dashboard', 
+    query: { enroll: 'true', t: Date.now() } 
+  })
 }
 
 function closeDropdown(e) {

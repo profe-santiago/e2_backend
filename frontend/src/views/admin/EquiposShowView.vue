@@ -631,87 +631,103 @@
                 color: var(--text-primary);
               "
             >
-              Datos del Proyecto
+              Proyectos Registrados
             </h3>
+            <span
+              v-if="equipo.todos_los_proyectos?.length"
+              style="font-size: 0.75rem; color: #6b7280; font-weight: 600"
+            >
+              {{ equipo.todos_los_proyectos.length }} Participación(es)
+            </span>
           </div>
           <div style="padding: 1.5rem">
-            <div v-if="equipo.proyecto">
-              <h4
-                style="
-                  font-size: 1.25rem;
-                  font-weight: 700;
-                  color: #4338ca;
-                  margin: 0 0 0.5rem;
-                "
+            <div v-if="equipo.todos_los_proyectos && equipo.todos_los_proyectos.length > 0">
+              <div 
+                v-for="(proj, index) in equipo.todos_los_proyectos" 
+                :key="proj.id"
+                :style="index > 0 ? 'margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed #e5e7eb;' : ''"
               >
-                {{ equipo.proyecto.nombre }}
-              </h4>
-              <p
-                style="
-                  font-size: 0.875rem;
-                  color: #4b5563;
-                  line-height: 1.5;
-                  margin: 0 0 1rem;
-                "
-              >
-                {{ equipo.proyecto.descripcion }}
-              </p>
-
-              <div
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 0.5rem;
-                  padding: 0.75rem;
-                  background: #f9fafb;
-                  border-radius: 0.5rem;
-                  border: 1px solid #f3f4f6;
-                "
-              >
-                <div
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem">
+                  <h4
+                    style="
+                      font-size: 1.25rem;
+                      font-weight: 700;
+                      color: #4338ca;
+                      margin: 0;
+                    "
+                  >
+                    {{ proj.nombre }}
+                  </h4>
+                  <span style="font-size: 10px; background: #e0e7ff; color: #4338ca; padding: 0.25rem 0.6rem; border-radius: 0.5rem; font-weight: 700; text-transform: uppercase">
+                    Proyecto {{ index + 1 }}
+                  </span>
+                </div>
+                <p
                   style="
-                    padding: 0.5rem;
-                    background: white;
-                    border-radius: 0.25rem;
-                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+                    font-size: 0.875rem;
+                    color: #4b5563;
+                    line-height: 1.5;
+                    margin: 0 0 1rem;
                   "
                 >
-                  <svg
-                    style="width: 1.25rem; height: 1.25rem; color: #a855f7"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    ></path>
-                  </svg>
-                </div>
-                <div>
-                  <span
+                  {{ proj.descripcion }}
+                </p>
+
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    padding: 0.75rem;
+                    background: #f9fafb;
+                    border-radius: 0.5rem;
+                    border: 1px solid #f3f4f6;
+                  "
+                >
+                  <div
                     style="
-                      display: block;
-                      font-size: 10px;
-                      font-weight: 700;
-                      color: #9ca3af;
-                      text-transform: uppercase;
-                      letter-spacing: 0.05em;
+                      padding: 0.5rem;
+                      background: white;
+                      border-radius: 0.25rem;
+                      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
                     "
-                    >Evento Asociado</span
                   >
-                  <span
-                    style="
-                      font-size: 0.875rem;
-                      font-weight: 700;
-                      color: #1f2937;
-                    "
-                    >{{
-                      equipo.proyecto.eventos?.nombre || "Evento no disponible"
-                    }}</span
-                  >
+                    <svg
+                      style="width: 1.25rem; height: 1.25rem; color: #a855f7"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      ></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <span
+                      style="
+                        display: block;
+                        font-size: 10px;
+                        font-weight: 700;
+                        color: #9ca3af;
+                        text-transform: uppercase;
+                        letter-spacing: 0.05em;
+                      "
+                      >Evento Asociado</span
+                    >
+                    <span
+                      style="
+                        font-size: 0.875rem;
+                        font-weight: 700;
+                        color: #1f2937;
+                      "
+                    >
+                      {{ proj.evento?.nombre || "Evento no disponible" }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
