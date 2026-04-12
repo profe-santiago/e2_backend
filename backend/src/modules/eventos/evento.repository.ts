@@ -112,24 +112,4 @@ export class EventoRepository {
     });
     return jueces;
   }
-
-  async addJuez(eventoId: number, userId: number) {
-    return prisma.evento_jueces.create({
-      data: {
-        evento_id: BigInt(eventoId),
-        user_id: BigInt(userId),
-      },
-    });
-  }
-
-  async removeJuez(eventoId: number, userId: number) {
-    return prisma.evento_jueces.delete({
-      where: {
-        evento_id_user_id: {
-          evento_id: BigInt(eventoId),
-          user_id: BigInt(userId),
-        },
-      },
-    });
-  }
 }

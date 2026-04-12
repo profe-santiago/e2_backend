@@ -173,7 +173,7 @@ async function main() {
                           proyecto_id: proyecto.id,
                           juez_id: judges[i].id,
                           criterio_id: crit.id,
-                          puntuacion: nota,
+                          puntuacion: Number(nota),
                           comentario: 'Excelente trabajo.'
                       }
                   });
