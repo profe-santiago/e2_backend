@@ -34,9 +34,10 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response,
     let puntajeTotal = 0;
     let chartLabels: string[] = [];
     let chartData: number[] = [];
-    let comentarios: string[] = [];
     let evento_inscrito: any = null;
     let constancias: any = { individual: false, equipo: false };
+    let invitaciones: any[] = [];
+    let comentarios: any[] = [];
 
     // 2. Find ALL memberships for multi-event support
     const memberships = await prisma.equipo_miembros.findMany({
@@ -69,8 +70,8 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response,
     // Determine the active context
     const proyectoIdReq = req.query.proyectoId ? BigInt(req.query.proyectoId as string) : null;
     const eventoIdReq = req.query.eventoId ? BigInt(req.query.eventoId as string) : null;
-    let activeMembership = null;
-    let activeProyectoData = null;
+    let activeMembership: any = null;
+    let activeProyectoData: any = null;
 
     if (proyectoIdReq) {
       // Find the membership for this specific project
@@ -83,7 +84,7 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response,
     } else if (eventoIdReq) {
       // Try to find if user is already in this event
       activeMembership = memberships.find(m => 
-        m.equipos.proyectos.some(p => p.id === eventoIdReq || p.evento_id === eventoIdReq)
+        m.equipos.proyectos.some(p => p.evento_id === eventoIdReq)
       );
       if (activeMembership) {
         activeProyectoData = activeMembership.equipos.proyectos.find(p => p.evento_id === eventoIdReq);
@@ -118,7 +119,7 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response,
       
       const defaultPart = sortedParticipaciones[0];
       if (defaultPart) {
-        activeMembership = memberships.find(m => Number(m.equipo_id) === defaultPart.equipo_id);
+        activeMembership = memberships.find(m => Number(m.equipos.id) === defaultPart.equipo_id);
         if (activeMembership) {
           activeProyectoData = activeMembership.equipos.proyectos.find(p => Number(p.id) === defaultPart.proyecto_id);
         }
@@ -151,31 +152,6 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response,
         repositorio_url: activeProyectoData.repositorio_url || null,
         evento_id: Number(activeProyectoData.evento_id)
       };
-
-      // 5. Get scores by criteria for this project
-      const evaluaciones = await prisma.evaluaciones.findMany({
-        where: { proyecto_id: activeProyectoData.id },
-        include: { evaluacion_criterios: true }
-      });
-
-      const scoresByCriteria: Record<string, { sum: number; count: number }> = {};
-      for (const ev of evaluaciones) {
-        const nombre = ev.evaluacion_criterios?.nombre || 'Criterio';
-        if (!scoresByCriteria[nombre]) {
-          scoresByCriteria[nombre] = { sum: 0, count: 0 };
-        }
-        scoresByCriteria[nombre].sum += Number(ev.puntuacion);
-        scoresByCriteria[nombre].count += 1;
-      }
-
-      chartLabels = Object.keys(scoresByCriteria);
-      chartData = chartLabels.map(label => {
-        const s = scoresByCriteria[label];
-        return s.count > 0 ? Math.round(s.sum / s.count) : 0;
-      });
-      puntajeTotal = chartData.length > 0
-        ? Math.round(chartData.reduce((a, b) => a + b, 0) / chartData.length)
-        : 0;
 
       // 6. Event info
       if (activeProyectoData.eventos) {
@@ -234,13 +210,13 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response,
           }
         }
 
-        chartLabels = [];
-        chartData = [];
+        const tempChartLabels: string[] = [];
+        const tempChartData: number[] = [];
         let grandTotal = 0;
 
         // Calculate average per criterion for the chart
         for (const criterion of criteriosEventos) {
-          chartLabels.push(criterion.nombre);
+          tempChartLabels.push(criterion.nombre);
           let sumCrit = 0;
           let countCrit = 0;
           for (const jId of judgesThatRated) {
@@ -251,7 +227,7 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response,
              }
           }
           const avgCrit = countCrit > 0 ? sumCrit / countCrit : 0;
-          chartData.push(Math.round(avgCrit * 10) / 10);
+          tempChartData.push(Math.round(avgCrit * 10) / 10);
         }
 
         // Calculate weighted average of judges
@@ -268,6 +244,8 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response,
           grandTotal = sumWeightedTotals / judgesThatRated.size;
         }
 
+        chartLabels = tempChartLabels;
+        chartData = tempChartData;
         comentarios = Object.values(judgeComments);
         puntajeTotal = Number(grandTotal.toFixed(1));
 
@@ -283,7 +261,6 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response,
     }
 
     // 7. Pending invitations (equipo_interacciones with tipo=INVITACION and estado=PENDIENTE)
-    let invitaciones: any[] = [];
     const invRows = await prisma.equipo_interacciones.findMany({
       where: {
         user_id: BigInt(userId),
@@ -439,21 +416,21 @@ router.post('/dashboard/registro-inicial', authMiddleware, async (req: AuthReque
 
     // Uniqueness checks
     const existingNoControl = await prisma.users.findFirst({
-      where: { no_control, NOT: { id: BigInt(userId) } }
+      where: { no_control, NOT: { id: BigInt(userId as string) } }
     });
     if (existingNoControl) {
       return res.status(400).json({ success: false, message: 'Este número de control ya está vinculado a otra cuenta' });
     }
 
     const existingTelefono = await prisma.users.findFirst({
-      where: { telefono, NOT: { id: BigInt(userId) } }
+      where: { telefono, NOT: { id: BigInt(userId as string) } }
     });
     if (existingTelefono) {
       return res.status(400).json({ success: false, message: 'Este número de teléfono ya está vinculado a otra cuenta' });
     }
 
     await prisma.users.update({
-      where: { id: BigInt(userId) },
+      where: { id: BigInt(userId as string) },
       data: {
         no_control,
         carrera,
@@ -570,7 +547,7 @@ router.post('/equipos', authMiddleware, async (req: AuthRequest, res: Response, 
 
     // 0. Verificación: ¿El evento ya comenzó o está incompleto?
     const evento = await prisma.eventos.findUnique({ 
-      where: { id: BigInt(evento_id) },
+      where: { id: BigInt(evento_id as string) },
       include: {
         _count: { select: { evento_jueces: true } },
         evaluacion_criterios: { select: { ponderacion: true } }
@@ -584,10 +561,10 @@ router.post('/equipos', authMiddleware, async (req: AuthRequest, res: Response, 
     // 1. Verificación: ¿Ya está en un equipo para este evento?
     const userInEvent = await prisma.proyectos.findFirst({
       where: {
-        evento_id: BigInt(evento_id),
+        evento_id: BigInt(evento_id as string),
         equipos: {
           equipo_miembros: {
-            some: { user_id: BigInt(userId) }
+            some: { user_id: BigInt(userId as string) }
           }
         }
       }
@@ -623,7 +600,7 @@ router.post('/equipos', authMiddleware, async (req: AuthRequest, res: Response, 
     await prisma.equipo_miembros.create({
       data: {
         equipo_id: team.id,
-        user_id: BigInt(userId),
+        user_id: BigInt(userId as string),
         rol: 'LIDER'
       }
     });
@@ -632,7 +609,7 @@ router.post('/equipos', authMiddleware, async (req: AuthRequest, res: Response, 
     await prisma.proyectos.create({
       data: {
         equipo_id: team.id,
-        evento_id: BigInt(evento_id),
+        evento_id: BigInt(evento_id as string),
         nombre: proyecto_nombre,
         descripcion: proyecto_descripcion,
         repositorio_url: repositorio_url || null,
@@ -744,7 +721,7 @@ router.get('/equipos/:id', authMiddleware, async (req: AuthRequest, res: Respons
     const userId = req.user!.id;
 
     const equipo = await prisma.equipos.findUnique({
-      where: { id: BigInt(id) },
+      where: { id: BigInt(id as string) },
       include: {
         proyectos: { include: { eventos: true } },
         equipo_miembros: { include: { users: true } }
@@ -754,7 +731,7 @@ router.get('/equipos/:id', authMiddleware, async (req: AuthRequest, res: Respons
     if (!equipo) return res.status(404).json({ success: false, message: 'Equipo no encontrado' });
 
     // Verificar pertenencia
-    const esMiembro = equipo.equipo_miembros.some(m => m.user_id === BigInt(userId));
+    const esMiembro = equipo.equipo_miembros.some(m => m.user_id === BigInt(userId as string));
     if (!esMiembro) return res.status(403).json({ success: false, message: 'No tienes permiso para ver este equipo' });
 
     res.json({
@@ -803,7 +780,7 @@ router.put('/equipos/:id', authMiddleware, async (req: AuthRequest, res: Respons
     const { nombre, proyecto_nombre, proyecto_descripcion, repositorio_url } = req.body;
 
     const membership = await prisma.equipo_miembros.findFirst({
-      where: { equipo_id: BigInt(id), user_id: BigInt(userId) }
+      where: { equipo_id: BigInt(id as string), user_id: BigInt(userId as string) }
     });
 
     if (!membership || membership.rol !== 'LIDER') {
@@ -812,11 +789,11 @@ router.put('/equipos/:id', authMiddleware, async (req: AuthRequest, res: Respons
 
     await prisma.$transaction([
       prisma.equipos.update({
-        where: { id: BigInt(id) },
+        where: { id: BigInt(id as string) },
         data: { nombre, updated_at: new Date() }
       }),
       prisma.proyectos.updateMany({
-        where: { equipo_id: BigInt(id) },
+        where: { equipo_id: BigInt(id as string) },
         data: {
           nombre: proyecto_nombre,
           descripcion: proyecto_descripcion,
@@ -880,7 +857,7 @@ router.post('/equipos/invitar', authMiddleware, async (req: AuthRequest, res: Re
     const { participante_id, equipo_id, mensaje, perfil_id } = req.body;
 
     const membership = await prisma.equipo_miembros.findFirst({
-      where: { equipo_id: BigInt(equipo_id), user_id: BigInt(userId) }
+      where: { equipo_id: BigInt(equipo_id as string), user_id: BigInt(userId as string) }
     });
 
     if (!membership || membership.rol !== 'LIDER') {
@@ -889,7 +866,7 @@ router.post('/equipos/invitar', authMiddleware, async (req: AuthRequest, res: Re
 
     // 1. Verificar capacidad (Máximo 5)
     const memberCount = await prisma.equipo_miembros.count({
-      where: { equipo_id: BigInt(equipo_id) }
+      where: { equipo_id: BigInt(equipo_id as string) }
     });
     if (memberCount >= 5) {
       return res.status(400).json({ success: false, message: 'Tu equipo ya tiene el máximo permitido (5 integrantes).' });
@@ -897,11 +874,15 @@ router.post('/equipos/invitar', authMiddleware, async (req: AuthRequest, res: Re
 
     // 2. Verificar si el evento comenzó
     const proyecto = await prisma.proyectos.findFirst({
-        where: { equipo_id: BigInt(equipo_id) },
+        where: { equipo_id: BigInt(equipo_id as string) },
         include: { eventos: true }
     });
     if (proyecto && proyecto.eventos && new Date(proyecto.eventos.fecha_inicio) <= new Date()) {
         return res.status(400).json({ success: false, message: 'No puedes invitar a más personas una vez que el evento ha comenzado.' });
+    }
+
+    if (!proyecto) {
+      return res.status(404).json({ success: false, message: 'Proyecto no encontrado' });
     }
 
     // 3. Verificar si el destinatario ya está participando en ESTE evento
@@ -910,7 +891,7 @@ router.post('/equipos/invitar', authMiddleware, async (req: AuthRequest, res: Re
             evento_id: proyecto.evento_id,
             equipos: {
                 equipo_miembros: {
-                    some: { user_id: BigInt(participante_id) }
+                    some: { user_id: BigInt(participante_id as string) }
                 }
             }
         }
@@ -921,8 +902,8 @@ router.post('/equipos/invitar', authMiddleware, async (req: AuthRequest, res: Re
     // Verificar si ya tiene una invitación pendiente de este equipo
     const existingInvite = await prisma.equipo_interacciones.findFirst({
         where: {
-            equipo_id: BigInt(equipo_id),
-            user_id: BigInt(participante_id),
+            equipo_id: BigInt(equipo_id as string),
+            user_id: BigInt(participante_id as string),
             tipo: 'INVITACION',
             estado: 'PENDIENTE'
         }
@@ -971,7 +952,7 @@ router.delete('/equipos/miembros/:id', authMiddleware, async (req: AuthRequest, 
       return res.status(403).json({ success: false, message: 'Solo el líder puede eliminar miembros' });
     }
 
-    if (String(BigInt(userId)) === String(BigInt(memberId))) {
+    if (String(BigInt(userId as string)) === String(BigInt(memberId as string))) {
       return res.status(400).json({ success: false, message: 'No puedes eliminarte a ti mismo desde aquí. Usa "Abandonar equipo".' });
     }
 
@@ -979,7 +960,7 @@ router.delete('/equipos/miembros/:id', authMiddleware, async (req: AuthRequest, 
     await prisma.equipo_miembros.deleteMany({
       where: { 
         equipo_id: myMembership.equipo_id,
-        user_id: BigInt(memberId)
+        user_id: BigInt(memberId as string)
       }
     });
 
@@ -1026,7 +1007,7 @@ router.get('/equipos/:id/invitaciones', authMiddleware, async (req: AuthRequest,
   try {
     const { id } = req.params;
     const invs = await prisma.equipo_interacciones.findMany({
-      where: { equipo_id: BigInt(id), tipo: 'INVITACION' },
+      where: { equipo_id: BigInt(id as string), tipo: 'INVITACION' },
       include: { users: true },
       orderBy: { created_at: 'desc' }
     });
@@ -1060,14 +1041,14 @@ router.post('/invitaciones/:id/responder', authMiddleware, async (req: AuthReque
     const userId = req.user!.id;
 
     const interaction = await prisma.equipo_interacciones.findUnique({
-      where: { id: BigInt(id) },
+      where: { id: BigInt(id as string) },
       include: { 
         perfiles: true,
         equipos: { include: { proyectos: true } }
       }
     });
 
-    if (!interaction || interaction.user_id !== BigInt(userId) || interaction.estado !== 'PENDIENTE') {
+    if (!interaction || interaction.user_id !== BigInt(userId as string) || interaction.estado !== 'PENDIENTE') {
       return res.status(400).json({ success: false, message: 'Invitación no válida o ya respondida' });
     }
 
@@ -1110,13 +1091,13 @@ router.post('/invitaciones/:id/responder', authMiddleware, async (req: AuthReque
 
       await prisma.$transaction([
         prisma.equipo_interacciones.update({
-          where: { id: BigInt(id) },
+          where: { id: BigInt(id as string) },
           data: { estado: 'ACEPTADA', respondido_en: new Date() }
         }),
         prisma.equipo_miembros.create({
           data: {
             equipo_id: interaction.equipo_id,
-            user_id: BigInt(userId),
+            user_id: BigInt(userId as string),
             rol: interaction.perfiles?.nombre || 'PROGRAMADOR'
           }
         })
@@ -1124,98 +1105,11 @@ router.post('/invitaciones/:id/responder', authMiddleware, async (req: AuthReque
       return res.json({ success: true, message: 'Invitación aceptada correctamente' });
     } else {
       await prisma.equipo_interacciones.update({
-        where: { id: BigInt(id) },
+        where: { id: BigInt(id as string) },
         data: { estado: 'RECHAZADA', respondido_en: new Date() }
       });
       return res.json({ success: true, message: 'Invitación rechazada' });
     }
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * @swagger
-<<<<<<< HEAD
- * /api/participante/eventos-proximos:
- *   get:
- *     summary: Listar eventos que aún no inician
- *     tags: [Participante]
- */
-router.get('/eventos-proximos', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const eventos = await prisma.eventos.findMany({
-      where: { fecha_inicio: { gt: new Date() } },
-      orderBy: { fecha_inicio: 'asc' }
-    });
-    res.json({ success: true, data: eventos });
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * @swagger
- * /api/participante/equipos-disponibles:
- *   get:
- *     summary: Listar equipos con vacantes filtrados por evento
- *     tags: [Participante]
- */
-router.get('/equipos-disponibles', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const userId = req.user!.id;
-    const evento_id = req.query.evento_id ? BigInt(req.query.evento_id as string) : undefined;
-    const search = req.query.search ? String(req.query.search) : '';
-
-    if (!evento_id) {
-      return res.status(400).json({ success: false, message: 'Debe seleccionar un evento.' });
-    }
-
-    // Buscamos equipos que tengan proyectos en el evento seleccionado
-    const equiposRaw = await prisma.equipos.findMany({
-      where: {
-        nombre: { contains: search },
-        proyectos: {
-          some: { evento_id: evento_id }
-        }
-      },
-      include: {
-        proyectos: {
-          where: { evento_id: evento_id },
-          select: { nombre: true }
-        },
-        equipo_miembros: {
-          select: { id: true, rol: true }
-        },
-        equipo_interacciones: {
-          where: { 
-            user_id: BigInt(userId),
-            tipo: 'SOLICITUD',
-            estado: 'PENDIENTE'
-          },
-          select: { id: true }
-        }
-      }
-    });
-
-    const data = equiposRaw.map(e => {
-      const miembrosCount = e.equipo_miembros.length;
-      // El usuario solicita que TODOS los equipos tengan una capacidad de 5 exactamente
-      const maxTotal = 5;
-      const vacantes = maxTotal - miembrosCount;
-
-      return {
-        id: Number(e.id),
-        nombre: e.nombre,
-        proyecto_nombre: e.proyectos[0]?.nombre || 'Sin nombre',
-        miembros: miembrosCount,
-        max_miembros: maxTotal,
-        vacantes: vacantes > 0 ? vacantes : 0,
-        solicitado: e.equipo_interacciones.length > 0
-      };
-    });
-
-    res.json({ success: true, data });
   } catch (error) {
     next(error);
   }
@@ -1238,7 +1132,7 @@ router.post('/solicitudes', authMiddleware, async (req: AuthRequest, res: Respon
 
     // 1. Verificar si el usuario ya está en este evento específico
     const targetTeamProject = await prisma.proyectos.findFirst({
-      where: { equipo_id: BigInt(equipo_id) }
+      where: { equipo_id: BigInt(equipo_id as string) }
     });
 
     if (targetTeamProject) {
@@ -1247,7 +1141,7 @@ router.post('/solicitudes', authMiddleware, async (req: AuthRequest, res: Respon
           evento_id: targetTeamProject.evento_id,
           equipos: {
             equipo_miembros: {
-              some: { user_id: BigInt(userId) }
+              some: { user_id: BigInt(userId as string) }
             }
           }
         }
@@ -1258,8 +1152,8 @@ router.post('/solicitudes', authMiddleware, async (req: AuthRequest, res: Respon
     // 2. Verificar si ya hay una solicitud pendiente para ESTE equipo
     const solicitudExistente = await prisma.equipo_interacciones.findFirst({
       where: {
-        user_id: BigInt(userId),
-        equipo_id: BigInt(equipo_id),
+        user_id: BigInt(userId as string),
+        equipo_id: BigInt(equipo_id as string),
         tipo: 'SOLICITUD',
         estado: 'PENDIENTE'
       }
@@ -1269,11 +1163,11 @@ router.post('/solicitudes', authMiddleware, async (req: AuthRequest, res: Respon
     // 3. Crear interacción con rol y mensaje
     await prisma.equipo_interacciones.create({
       data: {
-        user_id: BigInt(userId),
-        equipo_id: BigInt(equipo_id),
+        user_id: BigInt(userId as string),
+        equipo_id: BigInt(equipo_id as string),
         tipo: 'SOLICITUD',
         estado: 'PENDIENTE',
-        perfil_id: BigInt(perfil_id),
+        perfil_id: BigInt(perfil_id as string),
         mensaje: mensaje || null
       }
     });
@@ -1295,7 +1189,7 @@ router.get('/equipos/:id/solicitar-info', authMiddleware, async (req: AuthReques
   try {
     const { id } = req.params;
     const equipo = await prisma.equipos.findUnique({
-      where: { id: BigInt(id) },
+      where: { id: BigInt(id as string) },
       include: {
         proyectos: { select: { nombre: true } },
         equipo_miembros: { select: { id: true } }
@@ -1332,7 +1226,7 @@ router.get('/equipos/:id/solicitudes', authMiddleware, async (req: AuthRequest, 
     const { id: equipoId } = req.params;
 
     const membership = await prisma.equipo_miembros.findFirst({
-      where: { equipo_id: BigInt(equipoId), user_id: BigInt(userId) }
+      where: { equipo_id: BigInt(equipoId as string), user_id: BigInt(userId as string) }
     });
 
     if (!membership || membership.rol !== 'LIDER') {
@@ -1340,7 +1234,7 @@ router.get('/equipos/:id/solicitudes', authMiddleware, async (req: AuthRequest, 
     }
 
     const solicitudes = await prisma.equipo_interacciones.findMany({
-      where: { equipo_id: BigInt(equipoId), tipo: 'SOLICITUD' },
+      where: { equipo_id: BigInt(equipoId as string), tipo: 'SOLICITUD' },
       include: {
         users: { select: { name: true, email: true, no_control: true, carrera: true } },
         perfiles: { select: { nombre: true } }
@@ -1382,7 +1276,7 @@ router.post('/solicitudes/:id/responder', authMiddleware, async (req: AuthReques
     const userId = req.user!.id;
 
     const interaction = await prisma.equipo_interacciones.findUnique({
-      where: { id: BigInt(id) },
+      where: { id: BigInt(id as string) },
       include: { perfiles: true }
     });
 
@@ -1391,7 +1285,7 @@ router.post('/solicitudes/:id/responder', authMiddleware, async (req: AuthReques
     }
 
     const myMembership = await prisma.equipo_miembros.findFirst({
-      where: { equipo_id: interaction.equipo_id, user_id: BigInt(userId) }
+      where: { equipo_id: interaction.equipo_id, user_id: BigInt(userId as string) }
     });
 
     if (!myMembership || myMembership.rol !== 'LIDER') {
@@ -1415,7 +1309,7 @@ router.post('/solicitudes/:id/responder', authMiddleware, async (req: AuthReques
       const targetHasTeam = await prisma.equipo_miembros.findFirst({ where: { user_id: interaction.user_id } });
       if (targetHasTeam) {
           await prisma.equipo_interacciones.update({
-              where: { id: BigInt(id) },
+              where: { id: BigInt(id as string) },
               data: { estado: 'RECHAZADA', respondido_en: new Date() }
           });
           return res.status(400).json({ success: false, message: 'El solicitante ya es parte de otro equipo' });
@@ -1424,14 +1318,14 @@ router.post('/solicitudes/:id/responder', authMiddleware, async (req: AuthReques
       // 3. Aceptar
       await prisma.$transaction([
           prisma.equipo_interacciones.update({
-              where: { id: BigInt(id) },
+              where: { id: BigInt(id as string) },
               data: { estado: 'ACEPTADA', respondido_en: new Date() }
           }),
           prisma.equipo_miembros.create({
               data: {
                   equipo_id: interaction.equipo_id,
                   user_id: interaction.user_id,
-                  rol: perfil_id ? (await prisma.perfiles.findUnique({ where: { id: BigInt(perfil_id) } }))?.nombre || 'PROGRAMADOR' : (interaction.perfiles?.nombre || 'PROGRAMADOR')
+                  rol: perfil_id ? (await prisma.perfiles.findUnique({ where: { id: BigInt(perfil_id as string) } }))?.nombre || 'PROGRAMADOR' : (interaction.perfiles?.nombre || 'PROGRAMADOR')
               }
           }),
           // Opcional: Rechazar otras solicitudes/invitaciones del usuario? Laravel lo hace implícitamente al no permitir unirse a más de uno.
@@ -1440,7 +1334,7 @@ router.post('/solicitudes/:id/responder', authMiddleware, async (req: AuthReques
       res.json({ success: true, message: 'Solicitud aceptada. El participante ahora es miembro del equipo.' });
     } else {
       await prisma.equipo_interacciones.update({
-          where: { id: BigInt(id) },
+          where: { id: BigInt(id as string) },
           data: { estado: 'RECHAZADA', respondido_en: new Date() }
       });
       res.json({ success: true, message: 'Solicitud rechazada' });
@@ -1460,7 +1354,7 @@ router.post('/solicitudes/:id/responder', authMiddleware, async (req: AuthReques
 router.get('/constancias', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
-    const result = await constanciaService.getConstanciasByUser(Number(userId));
+    const result = await constanciaService.getConstanciasByUser(Number(userId as string));
     res.json(result);
   } catch (error) {
     next(error);
@@ -1482,8 +1376,8 @@ router.get('/constancias/download/:tipo/:eventoId', authMiddleware, async (req: 
     // 1. Intentar buscar en la base de datos primero (por si hay una personalizada)
     const constancia = await prisma.certificados.findFirst({
       where: {
-        user_id: BigInt(userId),
-        evento_id: BigInt(eventoId),
+        user_id: BigInt(userId as string),
+        evento_id: BigInt(eventoId as string),
         tipo: tipo as any
       }
     });
@@ -1496,7 +1390,7 @@ router.get('/constancias/download/:tipo/:eventoId', authMiddleware, async (req: 
     }
 
     // 2. Fallback Dinámico: Generar al vuelo si el evento terminó
-    const evento = await prisma.eventos.findUnique({ where: { id: BigInt(eventoId) } });
+    const evento = await prisma.eventos.findUnique({ where: { id: BigInt(eventoId as string) } });
     if (!evento) return res.status(404).json({ success: false, message: 'Evento no encontrado' });
 
     if (new Date() < new Date(evento.fecha_fin)) {
@@ -1506,9 +1400,9 @@ router.get('/constancias/download/:tipo/:eventoId', authMiddleware, async (req: 
     // Buscar el proyecto y equipo del usuario
     const proyecto = await prisma.proyectos.findFirst({
       where: {
-        evento_id: BigInt(eventoId),
+        evento_id: BigInt(eventoId as string),
         equipos: {
-          equipo_miembros: { some: { user_id: BigInt(userId) } }
+          equipo_miembros: { some: { user_id: BigInt(userId as string) } }
         }
       },
       include: {
