@@ -140,6 +140,7 @@ import { useRouter, useRoute } from 'vue-router'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import Pagination from '../../components/common/Pagination.vue'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 
 const router = useRouter()
 const route = useRoute()
@@ -204,14 +205,14 @@ function goToPage(page) {
 }
 
 async function deleteEquipo(id) {
-  if (!confirm('¿Eliminar equipo? Esta acción no se puede deshacer.')) return
+  if (!await alerts.confirmDelete('¿Eliminar equipo? Esta acción no se puede deshacer.')) return
   try {
     await api.delete(`/admin/equipos/${id}`)
     successMsg.value = 'Equipo eliminado exitosamente'
     fetchData(pagination.value.page)
     setTimeout(() => successMsg.value = '', 3000)
   } catch (e) {
-    alert(e.response?.data?.message || 'Error al eliminar')
+    alerts.error(e.response?.data?.message || 'Error al eliminar')
   }
 }
 </script>

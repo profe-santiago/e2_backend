@@ -787,6 +787,7 @@ import { ref, onMounted, computed } from "vue";
 import { useRoute } from "vue-router";
 import AppLayout from "../../components/layout/AppLayout.vue";
 import api from "../../services/api";
+import alerts from "../../services/alerts";
 
 const route = useRoute();
 const loading = ref(true);
@@ -863,21 +864,21 @@ async function addMember() {
     search.value = "";
     fetchData();
   } catch (e) {
-    alert(e.response?.data?.message || "Error al asignar miembro");
+    alerts.error(e.response?.data?.message || "Error al asignar miembro");
   } finally {
     saving.value = false;
   }
 }
 
 async function removeMember(participante_id) {
-  if (!confirm("¿Estás seguro de expulsar a este miembro?")) return;
+  if (!await alerts.confirmDelete("¿Estás seguro de expulsar a este miembro?")) return;
   try {
     await api.delete(
       `/admin/equipos/${route.params.id}/miembros/${participante_id}`,
     );
     fetchData();
   } catch (e) {
-    alert(e.response?.data?.message || "Error al expulsar");
+    alerts.error(e.response?.data?.message || "Error al expulsar");
   }
 }
 </script>

@@ -147,6 +147,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 
 const route = useRoute()
 const proyecto = ref(null)
@@ -163,7 +164,7 @@ onMounted(async () => {
     calcularPuntaje()
   } catch (e) {
     console.error(e)
-    alert('Error al cargar proyecto.')
+    alerts.error('Error al cargar proyecto.')
   } finally {
     loading.value = false
   }

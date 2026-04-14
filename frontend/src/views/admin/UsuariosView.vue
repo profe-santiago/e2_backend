@@ -118,6 +118,7 @@ import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import Pagination from '../../components/common/Pagination.vue'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 import { useAuthStore } from '../../stores/auth'
 
 const route = useRoute()
@@ -191,14 +192,14 @@ function formatDate(date) {
 }
 
 async function confirmDelete(u) {
-  if (confirm(`¿Estás seguro de eliminar a ${u.name}? Esta acción es irreversible.`)) {
+  if (await alerts.confirmDelete(`¿Estás seguro de eliminar a ${u.name}? Esta acción es irreversible.`)) {
     try {
       await api.delete(`/admin/usuarios/${u.id}`)
       successMsg.value = 'Usuario eliminado correctamente'
       fetchUsuarios()
       setTimeout(() => successMsg.value = '', 3000)
     } catch (err) {
-      alert(err.response?.data?.message || 'Error al eliminar usuario')
+      alerts.error(err.response?.data?.message || 'Error al eliminar usuario')
     }
   }
 }
@@ -231,7 +232,7 @@ async function exportToExcel() {
     window.URL.revokeObjectURL(url)
   } catch (err) {
     console.error('Error exporting to Excel:', err)
-    alert('Error al exportar los datos')
+    alerts.error('Error al exportar los datos')
   }
 }
 

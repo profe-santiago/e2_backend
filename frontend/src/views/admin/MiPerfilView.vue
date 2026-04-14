@@ -149,6 +149,7 @@
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 import { useAuthStore } from '../../stores/auth'
 import { useRouter } from 'vue-router'
 
@@ -265,7 +266,7 @@ async function handleUpdatePassword() {
 }
 
 async function confirmDeleteAccount() {
-  if (!confirm('¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer.')) return
+  if (!await alerts.confirmDelete('¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer.')) return
   deleting.value = true
   try {
     await api.delete('/auth/profile')

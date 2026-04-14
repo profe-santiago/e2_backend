@@ -124,6 +124,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 
 const route = useRoute()
 const router = useRouter()
@@ -170,10 +171,10 @@ async function enviarSolicitud() {
       perfil_id: form.value.perfil_id,
       mensaje: form.value.mensaje
     })
-    alert('Solicitud enviada correctamente.')
+    alerts.success('Solicitud enviada correctamente.')
     router.push({ name: 'UnirseEquipo' })
   } catch (e) {
-    alert(e.response?.data?.message || 'Error al enviar la solicitud.')
+    alerts.error(e.response?.data?.message || 'Error al enviar la solicitud.')
   } finally {
     submitting.value = false
   }

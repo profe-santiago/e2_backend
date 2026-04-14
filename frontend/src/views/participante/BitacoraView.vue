@@ -130,6 +130,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 import { useAuthStore } from '../../stores/auth'
 
 const route = useRoute()
@@ -196,7 +197,7 @@ async function save() {
     form.value.descripcion = ''
     await fetchAvances()
   } catch (e) {
-    alert(e.response?.data?.message || 'Error al guardar el registro.')
+    alerts.error(e.response?.data?.message || 'Error al guardar el registro.')
   } finally {
     saving.value = false
   }
@@ -221,12 +222,12 @@ function canDelete(a) {
 }
 
 async function confirmDelete(id) {
-  if (!confirm('¿Estás seguro de eliminar este registro?')) return
+  if (!await alerts.confirmDelete('¿Estás seguro de eliminar este registro?')) return
   try {
     await api.delete(`/participante/avances/${id}`)
     await fetchAvances()
   } catch (e) {
-    alert('No se pudo borrar el registro.')
+    alerts.error('No se pudo borrar el registro.')
   }
 }
 

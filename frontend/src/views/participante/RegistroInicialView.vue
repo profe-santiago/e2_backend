@@ -128,6 +128,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 
 const router = useRouter()
 const saving = ref(false)
@@ -188,7 +189,7 @@ async function save() {
   if (saving.value) return
   
   if (!form.value.carrera) {
-    alert('Por favor selecciona una carrera')
+    alerts.warning('Por favor selecciona una carrera')
     return
   }
 
@@ -209,7 +210,7 @@ async function save() {
       router.push('/participante/dashboard')
     }
   } catch (e) {
-    alert(e.response?.data?.message || 'Error al guardar los datos')
+    alerts.error(e.response?.data?.message || 'Error al guardar los datos')
   } finally {
     saving.value = false
   }

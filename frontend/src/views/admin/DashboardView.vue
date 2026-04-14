@@ -165,6 +165,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, P
 import AppLayout from '../../components/layout/AppLayout.vue'
 import draggable from 'vuedraggable'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, PointElement, LineElement, Title, Tooltip, Legend, Filler)
 
@@ -322,7 +323,7 @@ async function downloadReport() {
     }, 1000)
   } catch (err) {
     console.error('Error downloading PDF:', err)
-    alert('Error al generar el PDF del Dashboard')
+    alerts.error('Error al generar el PDF del Dashboard')
   }
 }
 

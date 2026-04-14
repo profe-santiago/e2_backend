@@ -77,6 +77,7 @@
 import { ref, onMounted } from 'vue'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 
 const eventos = ref([])
 const loading = ref(true)
@@ -109,7 +110,7 @@ async function downloadCert(tipo, eventoId) {
     // Abrir en nueva ventana/pestaña
     window.open(url, '_blank')
   } catch (e) {
-    alert('Todavía no se ha generado el archivo o el acceso fue denegado.')
+    alerts.warning('Todavía no se ha generado el archivo o el acceso fue denegado.')
   }
 }
 

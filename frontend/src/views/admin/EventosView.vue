@@ -126,6 +126,7 @@ import AppLayout from '../../components/layout/AppLayout.vue'
 import CalendarWidget from '../../components/CalendarWidget.vue'
 import Pagination from '../../components/common/Pagination.vue'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 
 const eventos = ref([])
 const loading = ref(true)
@@ -180,7 +181,7 @@ async function fetch() {
 }
 
 async function del(id) {
-  if(!confirm('¿Estás seguro?')) return
+  if(!await alerts.confirmDelete('¿Estás seguro de eliminar este evento?')) return
   try {
     await api.delete(`/admin/eventos/${id}`)
     msg.value = 'Evento eliminado'

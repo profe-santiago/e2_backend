@@ -162,6 +162,7 @@ import { useRouter } from 'vue-router'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import Pagination from '../../components/common/Pagination.vue'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 
 const router = useRouter()
 const proyectos = ref([])
@@ -223,14 +224,14 @@ function goToPage(page) {
 }
 
 async function deleteProyecto(id) {
-  if (!confirm('¿Estás seguro de eliminar este proyecto permanentemente? Se perderán las evaluaciones asociadas.')) return
+  if (!await alerts.confirmDelete('¿Estás seguro de eliminar este proyecto permanentemente? Se perderán las evaluaciones asociadas.')) return
   try {
     await api.delete(`/admin/proyectos/${id}`)
     successMsg.value = 'Proyecto eliminado exitosamente'
     fetchData(pagination.value.page)
     setTimeout(() => successMsg.value = '', 3000)
   } catch (e) {
-    alert(e.response?.data?.message || 'Error al eliminar')
+    alerts.error(e.response?.data?.message || 'Error al eliminar')
   }
 }
 </script>

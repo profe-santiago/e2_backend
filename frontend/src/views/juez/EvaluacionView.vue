@@ -153,6 +153,7 @@ import { ref, computed, onMounted, nextTick, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 import { Chart, registerables } from 'chart.js'
 
 Chart.register(...registerables)
@@ -252,7 +253,7 @@ function updateChart() {
 }
 
 function focusComment() { document.getElementById('commentArea')?.focus() }
-function clearComment() { if (confirm('¿Borrar comentario?')) { comentario.value = '' } }
+async function clearComment() { if (await alerts.confirm('¿Borrar comentario?', '¿Borrar?', 'Sí, borrar', 'Cancelar')) { comentario.value = '' } }
 async function saveCommentOnly() {
   if (saving.value) return
   saving.value = true
@@ -265,9 +266,9 @@ async function saveCommentOnly() {
       puntuaciones: scores, 
       comentario: comentario.value 
     })
-    alert('¡Comentario subido exitosamente! Ahora el participante podrá verlo.')
+    alerts.success('¡Comentario subido exitosamente! Ahora el participante podrá verlo.')
   } catch(e) {
-    alert(e.response?.data?.message || 'Error al subir comentario.')
+    alerts.error(e.response?.data?.message || 'Error al subir comentario.')
   } finally {
     saving.value = false
   }
@@ -285,10 +286,10 @@ async function save() {
       puntuaciones: scores, 
       comentario: comentario.value 
     })
-    alert('Evaluación guardada exitosamente.')
+    alerts.success('Evaluación guardada exitosamente.')
     router.back()
   } catch(e) { 
-    alert(e.response?.data?.message || 'Error al guardar.') 
+    alerts.error(e.response?.data?.message || 'Error al guardar.') 
   } finally {
     saving.value = false
   }

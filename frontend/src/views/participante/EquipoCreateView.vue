@@ -76,6 +76,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 
 const router = useRouter()
 const route = useRoute()
@@ -116,7 +117,7 @@ async function save() {
     await api.post('/participante/equipos', form.value)
     router.push('/participante/dashboard')
   } catch (e) {
-    alert(e.response?.data?.message || 'Error al crear el equipo')
+    alerts.error(e.response?.data?.message || 'Error al crear el equipo')
   } finally {
     saving.value = false
   }

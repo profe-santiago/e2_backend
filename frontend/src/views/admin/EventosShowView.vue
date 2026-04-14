@@ -257,6 +257,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 
 const route = useRoute()
 const evento = ref(null)
@@ -358,12 +359,12 @@ async function addJuez() {
 }
 
 async function removeJuez(juezId) {
-  if (!confirm('¿Deseas remover a este juez del evento?')) return
+  if (!await alerts.confirm('¿Deseas remover a este juez del evento?', '¿Remover juez?', 'Sí, remover', 'Cancelar')) return
   try {
     await api.delete(`/admin/eventos/${route.params.id}/jueces/${juezId}`)
     await fetchEvento()
   } catch (e) {
-    alert(e.response?.data?.message || 'Error al remover el juez.')
+    alerts.error(e.response?.data?.message || 'Error al remover el juez.')
   }
 }
 
@@ -409,19 +410,19 @@ async function saveEdit(id) {
     cancelEdit()
     await fetchEvento()
   } catch (e) {
-    alert(e.response?.data?.message || 'Error al actualizar el criterio.')
+    alerts.error(e.response?.data?.message || 'Error al actualizar el criterio.')
   } finally {
     savingEdit.value = false
   }
 }
 
 async function deleteCriterio(id) {
-  if (!confirm('¿Eliminar este criterio?')) return
+  if (!await alerts.confirmDelete('¿Eliminar este criterio?')) return
   try {
     await api.delete(`/admin/criterios/${id}`)
     await fetchEvento()
   } catch (e) {
-    alert(e.response?.data?.message || 'Error al eliminar el criterio.')
+    alerts.error(e.response?.data?.message || 'Error al eliminar el criterio.')
   }
 }
 

@@ -99,6 +99,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import Pagination from '../../components/common/Pagination.vue'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
@@ -134,7 +135,7 @@ async function fetchCarreras() {
 }
 
 async function del(id) {
-  if (!confirm('¿Seguro que deseas eliminar esta carrera?')) return
+  if (!await alerts.confirmDelete('¿Seguro que deseas eliminar esta carrera?')) return
   try {
     await api.delete(`/admin/carreras/${id}`)
     msg.value = 'Carrera eliminada con éxito.'
@@ -143,7 +144,7 @@ async function del(id) {
     router.replace({ query: null })
   } catch (error) {
     console.error(error)
-    alert('Ocurrió un error al eliminar la carrera.')
+    alerts.error('Ocurrió un error al eliminar la carrera.')
   }
 }
 

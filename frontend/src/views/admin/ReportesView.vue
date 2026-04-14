@@ -205,6 +205,7 @@
 import { ref, onMounted } from "vue";
 import AppLayout from "../../components/layout/AppLayout.vue";
 import api from "../../services/api";
+import alerts from "../../services/alerts";
 
 const stats = ref({});
 const loading = ref(true);
@@ -238,7 +239,7 @@ async function downloadPdf(type) {
     }, 1000);
   } catch (error) {
     console.error(error);
-    alert("Error al generar el reporte PDF");
+    alerts.error("Error al generar el reporte PDF");
   }
 }
 
@@ -262,12 +263,19 @@ onMounted(fetchStats);
 
 .report-card {
   padding: 1.5rem;
-  background: var(--card-bg, #fff);
-  border: 1px solid var(--border, #e5e7eb);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* Softer initial shadow */
   display: flex;
   flex-direction: column;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.report-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.15);
+  /* The original border remains, no extra color added */
 }
 
 .report-card-top {

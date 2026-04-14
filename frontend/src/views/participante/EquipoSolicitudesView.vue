@@ -100,6 +100,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 
 const route = useRoute()
 const router = useRouter()
@@ -144,8 +145,8 @@ async function fetchData() {
   }
 }
 
-async function responder(solicitud, estado) {
-  if (estado === 'RECHAZADA' && !confirm('¿Estás seguro de rechazar esta solicitud?')) return
+async function responder(solicitud, estado) {  
+  if (estado === 'RECHAZADA' && !await alerts.confirm('¿Estás seguro de rechazar esta solicitud?', '¿Rechazar solicitud?')) return
   
   try {
     processing.value = true

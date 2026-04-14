@@ -71,6 +71,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 
 const router = useRouter()
 const saving = ref(false)
@@ -88,7 +89,7 @@ async function save() {
     // Redirige al show para gestionar miembros, según dice Laravel
     router.push({ path: `/admin/equipos/${r.data.data.id || r.data.data.equipo.id}` })
   } catch (e) {
-    alert(e.response?.data?.message || 'Error al guardar')
+    alerts.error(e.response?.data?.message || 'Error al guardar')
   } finally {
     saving.value = false
   }

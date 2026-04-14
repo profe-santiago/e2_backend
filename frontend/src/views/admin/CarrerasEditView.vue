@@ -62,6 +62,7 @@
 import { ref, onMounted } from 'vue'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
@@ -86,7 +87,7 @@ async function save() {
     router.push({ path: '/admin/carreras', query: { msg: 'Carrera actualizada con éxito.' } })
   } catch (error) {
     console.error(error)
-    alert('Ocurrió un error al actualizar la carrera.')
+    alerts.error('Ocurrió un error al actualizar la carrera.')
   }
 }
 

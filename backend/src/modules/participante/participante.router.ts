@@ -869,20 +869,65 @@ router.put('/equipos/:id', authMiddleware, async (req: AuthRequest, res: Respons
  * @swagger
  * /api/participante/candidatos:
  *   get:
- *     summary: Buscar participantes sin equipo
+ *     summary: Buscar participantes disponibles para reclutar en un evento específico
  *     tags: [Participante]
  */
 router.get('/candidatos', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const query = (req.query.q as string || '').toLowerCase();
-    
+    const eventoId = req.query.evento_id as string;
+    const equipoId = req.query.equipo_id as string;
+    const userId = req.user!.id;
+
+    // Collect user IDs to exclude
+    const excludeUserIds: bigint[] = [BigInt(userId)];
+
+    // If an evento_id is provided, exclude users already in that event
+    if (eventoId) {
+      const usersInEvent = await prisma.equipo_miembros.findMany({
+        where: {
+          equipos: {
+            proyectos: {
+              some: { evento_id: BigInt(eventoId) }
+            }
+          }
+        },
+        select: { user_id: true }
+      });
+      usersInEvent.forEach(u => excludeUserIds.push(u.user_id));
+    }
+
+    // Exclude users with pending invitations from this team
+    if (equipoId) {
+      const pendingInvites = await prisma.equipo_interacciones.findMany({
+        where: {
+          equipo_id: BigInt(equipoId),
+          tipo: 'INVITACION',
+          estado: 'PENDIENTE'
+        },
+        select: { user_id: true }
+      });
+      pendingInvites.forEach(inv => excludeUserIds.push(inv.user_id));
+    }
+
+    // Build query
+    const whereClause: any = {
+      role: 'PARTICIPANTE',
+      id: { notIn: excludeUserIds },
+      OR: [
+        { name: { contains: query } },
+        { email: { contains: query } }
+      ]
+    };
+
+    // If no evento_id, fallback to legacy behavior
+    if (!eventoId && !equipoId) {
+      whereClause.equipo_miembros = { none: {} };
+    }
+
     const candidatos = await prisma.users.findMany({
-      where: {
-        role: 'PARTICIPANTE',
-        name: { contains: query },
-        equipo_miembros: { none: {} }
-      },
-      select: { id: true, name: true, carrera: true, no_control: true },
+      where: whereClause,
+      select: { id: true, name: true, carrera: true, no_control: true, email: true },
       take: 20
     });
 
@@ -891,6 +936,7 @@ router.get('/candidatos', authMiddleware, async (req: AuthRequest, res: Response
       data: candidatos.map(c => ({
         id: Number(c.id),
         name: c.name,
+        email: c.email,
         carrera: c.carrera || 'N/A',
         no_control: c.no_control
       }))
@@ -1001,7 +1047,16 @@ router.delete('/equipos/miembros/:id', authMiddleware, async (req: AuthRequest, 
 
     // 1. Obtener mi equipo y verificar si soy líder
     const myMembership = await prisma.equipo_miembros.findFirst({
-      where: { user_id: BigInt(userId) }
+      where: { user_id: BigInt(userId) },
+      include: {
+        equipos: {
+          include: {
+            proyectos: {
+              include: { eventos: true }
+            }
+          }
+        }
+      }
     });
 
     if (!myMembership || myMembership.rol !== 'LIDER') {
@@ -1012,7 +1067,20 @@ router.delete('/equipos/miembros/:id', authMiddleware, async (req: AuthRequest, 
       return res.status(400).json({ success: false, message: 'No puedes eliminarte a ti mismo desde aquí. Usa "Abandonar equipo".' });
     }
 
-    // 2. Eliminar el miembro del equipo
+    // 2. Validar que el evento no haya iniciado
+    const proyecto = myMembership.equipos.proyectos[0];
+    if (proyecto?.eventos) {
+      const ahora = new Date();
+      const fechaInicio = new Date(proyecto.eventos.fecha_inicio);
+      if (ahora >= fechaInicio) {
+        return res.status(403).json({
+          success: false,
+          message: 'No puedes eliminar miembros una vez que el evento ha iniciado o finalizado.'
+        });
+      }
+    }
+
+    // 3. Eliminar el miembro del equipo
     await prisma.equipo_miembros.deleteMany({
       where: { 
         equipo_id: myMembership.equipo_id,
@@ -1064,7 +1132,7 @@ router.get('/equipos/:id/invitaciones', authMiddleware, async (req: AuthRequest,
     const { id } = req.params;
     const invs = await prisma.equipo_interacciones.findMany({
       where: { equipo_id: BigInt(id as string), tipo: 'INVITACION' },
-      include: { users: true },
+      include: { users: true, perfiles: true },
       orderBy: { created_at: 'desc' }
     });
 
@@ -1075,9 +1143,77 @@ router.get('/equipos/:id/invitaciones', authMiddleware, async (req: AuthRequest,
         usuario: { name: i.users.name, email: i.users.email },
         estado: i.estado,
         mensaje: i.mensaje,
+        perfil_id: i.perfil_id ? Number(i.perfil_id) : null,
+        perfil_nombre: i.perfiles?.nombre || null,
         created_at: i.created_at
       }))
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/participante/equipos/invitaciones/{id}:
+ *   put:
+ *     summary: Editar el rol de una invitación pendiente
+ *     tags: [Participante]
+ */
+router.put('/equipos/invitaciones/:id', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    const invId = req.params.id as string;
+    const { perfil_id } = req.body;
+
+    const inv = await prisma.equipo_interacciones.findUnique({
+      where: { id: BigInt(invId) },
+      include: { equipos: { include: { equipo_miembros: true } } }
+    });
+
+    if (!inv) return res.status(404).json({ success: false, message: 'Invitación no encontrada' });
+    if (inv.estado !== 'PENDIENTE') return res.status(400).json({ success: false, message: 'Solo se pueden editar invitaciones pendientes' });
+
+    const esLider = inv.equipos.equipo_miembros.some(m => m.user_id === BigInt(userId) && m.rol === 'LIDER');
+    if (!esLider) return res.status(403).json({ success: false, message: 'Solo el líder puede editar invitaciones' });
+
+    await prisma.equipo_interacciones.update({
+      where: { id: BigInt(invId) },
+      data: { perfil_id: perfil_id ? BigInt(perfil_id) : null }
+    });
+
+    res.json({ success: true, message: 'Invitación actualizada correctamente' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/participante/equipos/invitaciones/{id}:
+ *   delete:
+ *     summary: Cancelar/eliminar una invitación pendiente
+ *     tags: [Participante]
+ */
+router.delete('/equipos/invitaciones/:id', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    const invId = req.params.id as string;
+
+    const inv = await prisma.equipo_interacciones.findUnique({
+      where: { id: BigInt(invId) },
+      include: { equipos: { include: { equipo_miembros: true } } }
+    });
+
+    if (!inv) return res.status(404).json({ success: false, message: 'Invitación no encontrada' });
+    if (inv.estado !== 'PENDIENTE') return res.status(400).json({ success: false, message: 'Solo se pueden cancelar invitaciones pendientes' });
+
+    const esLider = inv.equipos.equipo_miembros.some(m => m.user_id === BigInt(userId) && m.rol === 'LIDER');
+    if (!esLider) return res.status(403).json({ success: false, message: 'Solo el líder puede cancelar invitaciones' });
+
+    await prisma.equipo_interacciones.delete({ where: { id: BigInt(invId) } });
+
+    res.json({ success: true, message: 'Invitación cancelada correctamente' });
   } catch (error) {
     next(error);
   }

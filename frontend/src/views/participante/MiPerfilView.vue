@@ -178,6 +178,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import { useAuthStore } from '../../stores/auth'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 
 const auth = useAuthStore()
 const loading = ref(true)
@@ -327,7 +328,7 @@ async function handleAvatarUpload(e) {
     avatarFailed.value = false
     // Force immediate UI feedback if needed
   } catch(e) {
-    alert(e.response?.data?.message || 'Error al subir imagen')
+    alerts.error(e.response?.data?.message || 'Error al subir imagen')
   }
 }
 

@@ -70,6 +70,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 
 const router = useRouter()
 const route = useRoute()
@@ -85,7 +86,7 @@ onMounted(async () => {
     const { data } = await api.get(`/admin/equipos/${route.params.id}`)
     form.value.nombre = data.data.nombre
   } catch (e) {
-    alert('Error al cargar')
+    alerts.error('Error al cargar')
     router.replace('/admin/equipos')
   } finally {
     loading.value = false
@@ -98,7 +99,7 @@ async function save() {
     await api.put(`/admin/equipos/${route.params.id}`, form.value)
     router.push({ path: '/admin/equipos', query: { success: 'Equipo actualizado correctamente.' } })
   } catch (e) {
-    alert(e.response?.data?.message || 'Error al guardar')
+    alerts.error(e.response?.data?.message || 'Error al guardar')
   } finally {
     saving.value = false
   }

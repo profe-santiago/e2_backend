@@ -93,9 +93,12 @@
                   <div class="member-status-col">
                     <span class="m-role-badge">{{ m.rol }}</span>
                     <div class="member-actions">
-                      <button v-if="m.id !== currentUser.id && esLider" @click="removeMember(m.id)" class="btn-remove" title="Sacar del equipo">
+                      <button v-if="m.id !== currentUser.id && esLider && eventoProximo" @click="removeMember(m.id)" class="btn-remove" title="Sacar del equipo">
                         <svg style="width:1.25rem;height:1.25rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                       </button>
+                      <span v-else-if="m.id !== currentUser.id && esLider && !eventoProximo" class="event-lock-tag" title="No puedes eliminar miembros porque el evento ya inició o finalizó">
+                        <svg style="width:0.875rem;height:0.875rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                      </span>
                       <span v-else-if="m.id === currentUser.id" class="self-tag">Tú</span>
                     </div>
                   </div>
@@ -173,10 +176,18 @@
                     <div v-for="inv in invitaciones" :key="inv.id" class="invitation-row">
                        <div class="inv-info">
                           <p class="inv-name">{{ inv.usuario.name }}</p>
-                          <p class="inv-date">{{ formatDate(inv.created_at) }}</p>
+                          <p class="inv-date">{{ formatDate(inv.created_at) }} <span v-if="inv.perfil_nombre" style="color:var(--indigo-500);font-weight:600">· {{ inv.perfil_nombre }}</span></p>
                        </div>
-                       <div class="inv-status">
+                       <div class="inv-status" style="display:flex;align-items:center;gap:0.5rem">
                           <span class="badge" :class="statusClass(inv.estado)">{{ inv.estado }}</span>
+                          <template v-if="inv.estado === 'PENDIENTE'">
+                            <button @click="openEditInvModal(inv)" class="btn-icon-action" title="Editar rol">
+                              <svg style="width:1rem;height:1rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            </button>
+                            <button @click="cancelInvitation(inv.id)" class="btn-icon-action btn-icon-danger" title="Cancelar invitación">
+                              <svg style="width:1rem;height:1rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                          </template>
                        </div>
                     </div>
                   </div>
@@ -228,6 +239,35 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Editar Rol de Invitación -->
+    <div v-if="editInvModal.show" class="modal-overlay" @click.self="editInvModal.show = false">
+      <div class="modal-content shadow-2xl scale-in" style="max-width: 420px">
+        <div class="modal-header">
+          <h3 style="font-weight:700;font-size:1.125rem;color:var(--text-primary)">Editar Rol de Invitación</h3>
+          <button class="modal-close" @click="editInvModal.show = false">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="modal-body p-6">
+          <p style="font-size:.875rem;color:var(--text-muted);margin-bottom:1rem">Invitación para: <strong style="color:var(--text-primary)">{{ editInvModal.userName }}</strong></p>
+          <div class="form-group">
+            <label class="modal-label">Nuevo Rol</label>
+            <select v-model="editInvModal.perfil_id" class="form-control modal-select focus-blue">
+              <option value="">-- Sin especificar --</option>
+              <option v-for="p in perfiles" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button @click="editInvModal.show = false" class="btn-modal-cancel">Cancelar</button>
+          <button @click="saveEditInv" class="btn-modal-send" :disabled="savingEditInv">
+            <span v-if="!savingEditInv">Guardar</span>
+            <div v-else class="spinner-white" style="width:1.25rem;height:1.25rem"></div>
+          </button>
+        </div>
+      </div>
+    </div>
   </AppLayout>
 </template>
 
@@ -237,6 +277,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 
 const route = useRoute()
 const router = useRouter()
@@ -252,6 +293,7 @@ const miembros = ref([])
 const perfiles = ref([])
 const invitaciones = ref([])
 const showInvsList = ref(false)
+const eventoData = ref(null)
 
 const form = ref({
   nombre: '',
@@ -277,6 +319,14 @@ const isDiverse = computed(() => {
 })
 const esLider = computed(() => miembros.value.some(m => m.id === currentUser.value.id && m.es_lider))
 
+// Determinar si el evento está próximo (aún no inicia) para permitir eliminar miembros
+const eventoProximo = computed(() => {
+  if (!eventoData.value || !eventoData.value.fecha_inicio) return true // sin evento = permitir
+  const ahora = new Date()
+  const inicio = new Date(eventoData.value.fecha_inicio)
+  return ahora < inicio
+})
+
 async function fetchData() {
   try {
     loading.value = true
@@ -293,6 +343,7 @@ async function fetchData() {
       repositorio_url: proyecto?.repositorio_url || ''
     }
     miembros.value = membersData
+    eventoData.value = teamRes.data.data.proyecto?.evento || null
     perfiles.value = (profilesRes.data.data || []).filter(p => {
       const n = p.nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       return !n.includes('lider');
@@ -302,7 +353,7 @@ async function fetchData() {
       await fetchInvitations()
     }
   } catch(e) {
-    alert('No se pudo cargar la información')
+    alerts.error('No se pudo cargar la información')
     router.push('/participante/dashboard')
   } finally {
     loading.value = false
@@ -321,7 +372,7 @@ async function fetchInvitations() {
 
 function toggleInvsList() {
   if (invitaciones.value.length === 0) {
-    alert('Aún no has enviado ninguna solicitud de unión a este equipo.')
+    alerts.info('Aún no has enviado ninguna solicitud de unión a este equipo.')
     return
   }
   showInvsList.value = !showInvsList.value
@@ -331,9 +382,9 @@ async function saveProject() {
   try {
     saving.value = true
     await api.put(`/participante/equipos/${route.params.id}`, form.value)
-    alert('Información actualizada correctamente')
+    alerts.success('Información actualizada correctamente')
   } catch(e) {
-    alert(e.response?.data?.message || 'Error al guardar')
+    alerts.error(e.response?.data?.message || 'Error al guardar')
   } finally {
     saving.value = false
   }
@@ -342,7 +393,9 @@ async function saveProject() {
 async function searchCandidatos() {
   if (searchQuery.value.length < 3) { candidatos.value = []; return }
   try {
-    const r = await api.get(`/participante/candidatos?q=${searchQuery.value}`)
+    const eventoId = eventoData.value?.id || ''
+    const equipoId = route.params.id || ''
+    const r = await api.get(`/participante/candidatos?q=${searchQuery.value}&evento_id=${eventoId}&equipo_id=${equipoId}`)
     candidatos.value = r.data.data
   } catch(e) {}
 }
@@ -360,25 +413,25 @@ async function sendInvitation() {
       mensaje: inviteModal.value.mensaje,
       perfil_id: inviteModal.value.perfil_id
     })
-    alert('Invitación enviada')
+    alerts.success('Invitación enviada')
     inviteModal.value.show = false
     searchQuery.value = ''
     candidatos.value = []
     fetchInvitations()
   } catch(e) {
-    alert(e.response?.data?.message || 'Error al enviar invitación')
+    alerts.error(e.response?.data?.message || 'Error al enviar invitación')
   } finally {
     inviting.value = false
   }
 }
 
-async function removeMember(userId) {
-  if (!confirm('¿Seguro que deseas eliminar a este miembro del equipo?')) return
+async function removeMember(userId) {  
+  if (!await alerts.confirm('¿Seguro que deseas eliminar a este miembro del equipo?', '¿Eliminar miembro?', 'Sí, eliminar', 'Cancelar')) return
   try {
     await api.delete(`/participante/equipos/miembros/${userId}`)
     await fetchData()
   } catch(e) {
-    alert(e.response?.data?.message || 'Error al eliminar')
+    alerts.error(e.response?.data?.message || 'Error al eliminar')
   }
 }
 
@@ -390,6 +443,45 @@ const statusClass = s => {
 }
 
 onMounted(fetchData)
+
+const editInvModal = ref({ show: false, invId: null, perfil_id: '', userName: '' })
+const savingEditInv = ref(false)
+
+function openEditInvModal(inv) {
+  editInvModal.value = {
+    show: true,
+    invId: inv.id,
+    perfil_id: inv.perfil_id || '',
+    userName: inv.usuario.name
+  }
+}
+
+async function saveEditInv() {
+  try {
+    savingEditInv.value = true
+    await api.put(`/participante/equipos/invitaciones/${editInvModal.value.invId}`, {
+      perfil_id: editInvModal.value.perfil_id || null
+    })
+    editInvModal.value.show = false
+    alerts.success('Rol actualizado')
+    await fetchInvitations()
+  } catch (e) {
+    alerts.error(e.response?.data?.message || 'Error al actualizar')
+  } finally {
+    savingEditInv.value = false
+  }
+}
+
+async function cancelInvitation(invId) {
+  if (!await alerts.confirmDelete('¿Cancelar esta invitación? El participante ya no la verá.')) return
+  try {
+    await api.delete(`/participante/equipos/invitaciones/${invId}`)
+    alerts.success('Invitación cancelada')
+    await fetchInvitations()
+  } catch (e) {
+    alerts.error(e.response?.data?.message || 'Error al cancelar')
+  }
+}
 </script>
 
 <style scoped>
@@ -451,8 +543,8 @@ onMounted(fetchData)
 .self-tag { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); padding-right: 0.5rem; }
 .dark .m-role-badge { background: var(--bg-input); color: var(--indigo-400); }
 
-/* Remove Member Button */
-.btn-remove {
+/* Remove Member Button & Action Icons */
+.btn-remove, .btn-icon-action {
   background: none;
   border: none;
   color: var(--text-muted);
@@ -464,12 +556,15 @@ onMounted(fetchData)
   align-items: center;
   justify-content: center;
 }
-.btn-remove:hover {
-  color: var(--danger-600);
+.btn-remove:hover, .btn-icon-action:hover {
+  color: var(--indigo-600);
   background: var(--card-muted);
   transform: scale(1.1);
 }
-.btn-remove svg {
+.btn-remove:hover, .btn-icon-action.btn-icon-danger:hover {
+  color: var(--danger-600);
+}
+.btn-remove svg, .btn-icon-action svg {
   width: 1.125rem;
   height: 1.125rem;
 }
@@ -531,4 +626,18 @@ onMounted(fetchData)
 }
 
 @keyframes scaleIn { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
+
+/* Lock icon when event is active/finished */
+.event-lock-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.5rem;
+  background: var(--card-muted, #f3f4f6);
+  color: var(--text-muted, #9ca3af);
+  cursor: not-allowed;
+  border: 1px solid var(--border-color, #e5e7eb);
+}
 </style>

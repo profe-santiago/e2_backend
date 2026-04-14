@@ -21,24 +21,38 @@
 
 
       <!-- ======================================== -->
-      <!--  INVITACIONES PENDIENTES (sin equipo)    -->
+      <!--  INVITACIONES PENDIENTES                  -->
       <!-- ======================================== -->
-      <div v-if="!data.equipo && data.invitaciones?.length" class="invitaciones-banner">
-        <div style="flex:1">
-          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
-            <svg style="width:1.25rem;height:1.25rem;color:var(--indigo-500)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-            <h3 style="font-size:1.125rem;font-weight:700;color:var(--text-primary)">
+      <div v-if="data.invitaciones?.length" class="invitaciones-banner">
+        <div class="inv-banner-header">
+          <div class="inv-icon-wrapper">
+            <div class="inv-icon-pulse"></div>
+            <svg class="inv-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          </div>
+          <div>
+            <h3 class="inv-title">
               Tienes {{ data.invitaciones.length }} invitación{{ data.invitaciones.length > 1 ? 'es' : '' }} pendiente{{ data.invitaciones.length > 1 ? 's' : '' }}
             </h3>
+            <p class="inv-subtitle">Líderes de equipos te han invitado a unirte a sus proyectos</p>
           </div>
-          <p style="font-size:.875rem;color:var(--text-muted);margin-bottom:1rem">Los líderes de equipos te han invitado a unirte a sus proyectos</p>
-          <div style="display:flex;flex-direction:column;gap:.5rem">
-            <div v-for="inv in data.invitaciones" :key="inv.id" class="invite-item">
-              <span style="color:var(--text-primary)"><strong>{{ inv.equipo?.nombre || 'Equipo' }}</strong> <span style="color:var(--text-muted)">— rol: <strong>{{ inv.rol }}</strong></span></span>
-              <div style="display:flex;gap:.5rem">
-                <button class="btn btn-sm btn-indigo" @click="respondInvite(inv.id, 'aceptada')">Aceptar</button>
-                <button class="btn btn-sm btn-outline" @click="respondInvite(inv.id, 'rechazada')">Rechazar</button>
+        </div>
+        <div class="inv-list">
+          <div v-for="inv in data.invitaciones" :key="inv.id" class="inv-card">
+            <div class="inv-card-left">
+              <div class="inv-team-avatar">{{ (inv.equipo?.nombre || 'E').charAt(0).toUpperCase() }}</div>
+              <div class="inv-card-info">
+                <span class="inv-team-name">{{ inv.equipo?.nombre || 'Equipo' }}</span>
+                <span class="inv-role-badge">{{ inv.rol }}</span>
               </div>
+            </div>
+            <div class="inv-card-actions">
+              <button class="btn btn-sm btn-indigo" @click="respondInvite(inv.id, 'aceptada')">
+                <svg style="width:.875rem;height:.875rem;margin-right:.25rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                Aceptar
+              </button>
+              <button class="btn btn-sm btn-outline" @click="respondInvite(inv.id, 'rechazada')">
+                Rechazar
+              </button>
             </div>
           </div>
         </div>
@@ -397,6 +411,7 @@ import { useRouter, useRoute } from 'vue-router'
 import AppLayout from '../../components/layout/AppLayout.vue'
 import CalendarWidget from '../../components/CalendarWidget.vue'
 import api from '../../services/api'
+import alerts from '../../services/alerts'
 import Chart from 'chart.js/auto'
 import { useAuthStore } from '../../stores/auth'
 
@@ -550,7 +565,7 @@ watch(() => route.query, (q) => {
 }, { immediate: true, deep: true })
 
 async function handleAbandonarClick() {
-  if (!confirm('¿Estás seguro de abandonar el equipo?')) return;
+  if (!await alerts.confirm('¿Estás seguro de abandonar el equipo?', 'Abandonar Equipo', 'Sí, abandonar', 'Cancelar')) return;
   
   // Si es el único líder y hay más gente
   const otrosMiembros = data.value.miembros.filter(m => m.id != auth.user?.id);
@@ -558,7 +573,7 @@ async function handleAbandonarClick() {
   
   if (data.value.es_lider && otrosLideres.length === 0) {
     if (otrosMiembros.length === 0) {
-       alert('No puedes abandonar el equipo siendo el único integrante. Para eliminarlo contacta al administrador.');
+       alerts.warning('No puedes abandonar el equipo siendo el único integrante. Para eliminarlo contacta al administrador.');
        return;
     }
     // Abrir modal de transferencia
@@ -583,11 +598,11 @@ async function abandonarEquipo(nuevoLiderId = null) {
       data: { nuevoLiderId }
     });
     if (res.data.success) {
-      alert(res.data.message);
+      alerts.success(res.data.message);
       fetchData();
     }
   } catch (e) {
-    alert(e.response?.data?.message || 'Error al abandonar el equipo');
+    alerts.error(e.response?.data?.message || 'Error al abandonar el equipo');
   } finally {
     loading.value = false;
   }
@@ -638,8 +653,55 @@ onMounted(() => {
 .action-card:hover .action-cta { transform: scale(1.05); }
 
 /* Invitations Banner */
-.invitaciones-banner { background: var(--card-muted); border: 1px solid var(--border-color); border-radius: 1rem; padding: 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
-.invite-item { display: flex; align-items: center; justify-content: space-between; font-size: .875rem; padding: .5rem .75rem; background: var(--bg-card); border-radius: .5rem; border: 1px solid var(--border-color); }
+.invitaciones-banner {
+  background: linear-gradient(135deg, rgba(79,70,229,0.08), rgba(129,140,248,0.06));
+  border: 1px solid rgba(99,102,241,0.25);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  animation: fadeSlideIn 0.4s ease;
+}
+@keyframes fadeSlideIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+
+.inv-banner-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.inv-icon-wrapper { position: relative; width: 2.75rem; height: 2.75rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.inv-icon { width: 1.5rem; height: 1.5rem; color: var(--indigo-500); position: relative; z-index: 1; }
+.inv-icon-pulse {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: rgba(99,102,241,0.15);
+  animation: invPulse 2s ease-in-out infinite;
+}
+@keyframes invPulse { 0%,100% { transform:scale(1); opacity:0.6; } 50% { transform:scale(1.25); opacity:0; } }
+.inv-title { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); }
+.inv-subtitle { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem; }
+
+.inv-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.inv-card {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.inv-card:hover { border-color: rgba(99,102,241,0.4); box-shadow: 0 2px 12px rgba(99,102,241,0.08); }
+.inv-card-left { display: flex; align-items: center; gap: 0.75rem; }
+.inv-team-avatar {
+  width: 2.25rem; height: 2.25rem; border-radius: 0.625rem;
+  background: linear-gradient(135deg, var(--indigo-500), var(--indigo-600, #4f46e5));
+  color: white; font-weight: 800; font-size: 0.85rem;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.inv-card-info { display: flex; flex-direction: column; gap: 0.15rem; }
+.inv-team-name { font-size: 0.875rem; font-weight: 600; color: var(--text-primary); }
+.inv-role-badge {
+  font-size: 0.7rem; font-weight: 700; color: var(--indigo-500);
+  text-transform: uppercase; letter-spacing: 0.03em;
+}
+.inv-card-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+
+@media (max-width: 640px) {
+  .inv-card { flex-direction: column; align-items: stretch; gap: 0.75rem; }
+  .inv-card-actions { justify-content: flex-end; }
+}
 
 /* Modal */
 .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 1rem; }

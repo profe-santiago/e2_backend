@@ -154,6 +154,8 @@ function openModal(perfil = null) {
   showModal.value = true
 }
 
+import alerts from '../../services/alerts'
+
 async function handleSubmit() {
   saving.value = true
   try {
@@ -164,16 +166,16 @@ async function handleSubmit() {
     }
     showModal.value = false
     fetchPerfiles()
-  } catch (error) { alert(error.response?.data?.message || 'Error al guardar') }
+  } catch (error) { alerts.error(error.response?.data?.message || 'Error al guardar') }
   finally { saving.value = false }
 }
 
 async function confirmDelete(perfil) {
-  if (confirm(`¿Eliminar este perfil? Esto podría afectar a equipos existentes.`)) {
+  if (await alerts.confirmDelete('¿Eliminar este perfil? Esto podría afectar a equipos existentes.')) {
     try {
       await api.delete(`/admin/perfiles/${perfil.id}`)
       fetchPerfiles()
-    } catch (error) { alert('Error al eliminar') }
+    } catch (error) { alerts.error('Error al eliminar') }
   }
 }
 
