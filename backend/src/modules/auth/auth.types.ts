@@ -19,6 +19,9 @@ export interface AuthResponse {
       name: string;
       email: string;
       roles: string[];
+      carrera?: string | null;
+      no_control?: string | null;
+      telefono?: string | null;
     };
     token?: string;
     dashboardRoute?: string;
