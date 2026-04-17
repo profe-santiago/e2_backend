@@ -17,11 +17,19 @@ export class AdminRepository {
     const total_equipos = await prisma.equipos.count();
     const total_proyectos = await prisma.proyectos.count();
 
-    // 4. Eventos activos
+    const now = new Date();
+    const eventos_proximos_count = await prisma.eventos.count({
+      where: { fecha_inicio: { gt: now } }
+    });
+    const eventos_activos_count = await prisma.eventos.count({
+      where: { fecha_inicio: { lte: now }, fecha_fin: { gte: now } }
+    });
+    const eventos_finalizados_count = await prisma.eventos.count({
+      where: { fecha_fin: { lt: now } }
+    });
+    // Keep backwards compat
     const eventos_activos = await prisma.eventos.findMany({
-      where: {
-        fecha_fin: { gte: new Date() }
-      },
+      where: { fecha_fin: { gte: now } },
       orderBy: { fecha_inicio: 'asc' }
     });
 
@@ -74,6 +82,9 @@ export class AdminRepository {
       total_equipos,
       total_proyectos,
       eventos_activos,
+      eventos_proximos_count,
+      eventos_activos_count,
+      eventos_finalizados_count,
       participantesPorCarrera,
       proyectosEvaluados,
       proyectosPendientes,

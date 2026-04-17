@@ -88,10 +88,14 @@
             <!-- stats_eventos -->
             <div v-else-if="w.key === 'stats_eventos'" class="stat-card stat-full">
               <div class="stat-top">
-                <div><p class="stat-label">Eventos Activos</p><h4 class="stat-value">{{ data.eventos_activos?.length || 0 }}</h4></div>
+                <div><p class="stat-label">Eventos</p><h4 class="stat-value">{{ (data.eventos_activos_count || 0) + (data.eventos_proximos_count || 0) + (data.eventos_finalizados_count || 0) }}</h4></div>
                 <div class="stat-icon purple"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
               </div>
-              <div class="stat-sub"><span class="badge badge-purple">En curso</span></div>
+              <div class="stat-sub" style="display:flex;gap:.75rem;flex-wrap:wrap">
+                <span style="color:#15803d;font-size:.75rem;font-weight:700">● {{ data.eventos_activos_count || 0 }} Activos</span>
+                <span style="color:#c2410c;font-size:.75rem;font-weight:700">● {{ data.eventos_proximos_count || 0 }} Próximos</span>
+                <span style="color:#6b7280;font-size:.75rem;font-weight:700">● {{ data.eventos_finalizados_count || 0 }} Finalizados</span>
+              </div>
             </div>
 
             <!-- chart_evaluacion -->
