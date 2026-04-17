@@ -8,6 +8,36 @@ async function main() {
   await prisma.proyectos.deleteMany()
   await prisma.equipos.deleteMany()
   await prisma.eventos.deleteMany()
+  await prisma.carreras.deleteMany()
+  await prisma.perfiles.deleteMany()
+
+  // ─── CARRERAS (Las 10 predeterminadas) ───
+  const carrerasData = [
+    { nombre: 'Ingeniería en Sistemas Computacionales', clave: 'ISC' },
+    { nombre: 'Ingeniería Industrial', clave: 'II' },
+    { nombre: 'Ingeniería Electrónica', clave: 'IE' },
+    { nombre: 'Ingeniería Mecánica', clave: 'IM' },
+    { nombre: 'Ingeniería Mecatrónica', clave: 'IMT' },
+    { nombre: 'Ingeniería Eléctrica', clave: 'IEL' },
+    { nombre: 'Ingeniería Civil', clave: 'IC' },
+    { nombre: 'Ingeniería en Gestión Empresarial', clave: 'IGE' },
+    { nombre: 'Contador Público', clave: 'CP' },
+    { nombre: 'Licenciatura en Administración', clave: 'LA' },
+  ]
+  await prisma.carreras.createMany({ data: carrerasData })
+  console.log(`✅ ${carrerasData.length} carreras creadas`)
+
+  // ─── PERFILES (Roles para equipos) ───
+  const perfilesData = [
+    { nombre: 'Programador Backend' },
+    { nombre: 'Programador Frontend' },
+    { nombre: 'Diseñador UI/UX' },
+    { nombre: 'Tester / QA' },
+    { nombre: 'Líder de Proyecto' },
+    { nombre: 'Analista de Datos' },
+  ]
+  await prisma.perfiles.createMany({ data: perfilesData })
+  console.log(`✅ ${perfilesData.length} perfiles creados`)
   
   // ─── EVENTOS ───
   const eventos = await Promise.all([
