@@ -330,8 +330,9 @@ const eventoProximo = computed(() => {
 async function fetchData() {
   try {
     loading.value = true
+    const evIdCtx = route.query.evento_id;
     const [teamRes, profilesRes] = await Promise.all([
-      api.get(`/participante/equipos/${route.params.id}`),
+      api.get(`/participante/equipos/${route.params.id}`, { params: { evento_id: evIdCtx } }),
       api.get('/participante/perfiles')
     ])
 

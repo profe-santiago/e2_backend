@@ -815,6 +815,13 @@ router.get('/equipos/:id', authMiddleware, async (req: AuthRequest, res: Respons
     const esMiembro = equipo.equipo_miembros.some(m => m.user_id === BigInt(userId as string));
     if (!esMiembro) return res.status(403).json({ success: false, message: 'No tienes permiso para ver este equipo' });
 
+    const eventoIdContext = req.query.evento_id as string | undefined;
+    let mainProyecto = equipo.proyectos[0];
+    if (eventoIdContext) {
+      const pMatch = equipo.proyectos.find(p => p.evento_id.toString() === eventoIdContext);
+      if (pMatch) mainProyecto = pMatch;
+    }
+
     res.json({
       success: true,
       data: {
@@ -822,14 +829,14 @@ router.get('/equipos/:id', authMiddleware, async (req: AuthRequest, res: Respons
           id: Number(equipo.id),
           nombre: equipo.nombre
         },
-        proyecto: equipo.proyectos[0] ? {
-          ...equipo.proyectos[0],
-          id: Number(equipo.proyectos[0].id),
-          equipo_id: Number(equipo.proyectos[0].equipo_id),
-          evento_id: Number(equipo.proyectos[0].evento_id),
-          evento: equipo.proyectos[0].eventos ? {
-            ...equipo.proyectos[0].eventos,
-            id: Number(equipo.proyectos[0].eventos.id)
+        proyecto: mainProyecto ? {
+          ...mainProyecto,
+          id: Number(mainProyecto.id),
+          equipo_id: Number(mainProyecto.equipo_id),
+          evento_id: Number(mainProyecto.evento_id),
+          evento: mainProyecto.eventos ? {
+            ...mainProyecto.eventos,
+            id: Number(mainProyecto.eventos.id)
           } : null
         } : null,
         miembros: equipo.equipo_miembros.map(m => ({
