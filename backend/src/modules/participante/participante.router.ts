@@ -691,9 +691,15 @@ router.delete('/equipos/salir', authMiddleware, async (req: AuthRequest, res: Re
   try {
     const userId = req.user!.id;
     const { nuevoLiderId } = req.body;
-    
+    const eventoIdContext = req.query.evento_id as string | undefined;
+
     const membership = await prisma.equipo_miembros.findFirst({
-      where: { user_id: BigInt(userId) },
+      where: { 
+        user_id: BigInt(userId),
+        equipos: eventoIdContext ? {
+          proyectos: { some: { evento_id: BigInt(eventoIdContext) } }
+        } : undefined
+      },
       include: {
         equipos: {
           include: {
@@ -709,7 +715,6 @@ router.delete('/equipos/salir', authMiddleware, async (req: AuthRequest, res: Re
     }
 
     // Validar que el evento no haya iniciado o ya finalizado
-    const eventoIdContext = req.query.evento_id as string | undefined;
     let proyectoSalir = membership.equipos.proyectos[0];
     if (eventoIdContext) {
       const pMatch = membership.equipos.proyectos.find(p => p.evento_id.toString() === eventoIdContext);
@@ -1078,8 +1083,15 @@ router.delete('/equipos/miembros/:id', authMiddleware, async (req: AuthRequest, 
     const memberId = req.params.id; // El ID del usuario a eliminar
 
     // 1. Obtener mi equipo y verificar si soy líder
+    const eventoIdContext = req.query.evento_id as string | undefined;
+
     const myMembership = await prisma.equipo_miembros.findFirst({
-      where: { user_id: BigInt(userId) },
+      where: { 
+        user_id: BigInt(userId),
+        equipos: eventoIdContext ? {
+          proyectos: { some: { evento_id: BigInt(eventoIdContext) } }
+        } : undefined
+      },
       include: {
         equipos: {
           include: {
@@ -1100,7 +1112,6 @@ router.delete('/equipos/miembros/:id', authMiddleware, async (req: AuthRequest, 
     }
 
     // 2. Validar que el evento no haya iniciado o finalizado
-    const eventoIdContext = req.query.evento_id as string | undefined;
     let proyecto = myMembership.equipos.proyectos[0];
     if (eventoIdContext) {
       const pMatch = myMembership.equipos.proyectos.find(p => p.evento_id.toString() === eventoIdContext);
