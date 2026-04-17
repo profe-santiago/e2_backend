@@ -138,7 +138,7 @@
                 </div>
                 <!-- Members -->
                 <div>
-                  <h4 class="section-label">Integrantes</h4>
+                  <h4 class="section-label">Integrantes ({{ data.miembros?.length || 0 }}/5)</h4>
                   <div style="display:flex;flex-wrap:wrap;gap:1rem">
                     <div v-for="m in data.miembros" :key="m.id" class="member-chip">
                       <div class="member-avatar">{{ m.nombre?.charAt(0).toUpperCase() }}</div>
