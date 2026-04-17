@@ -97,6 +97,17 @@
               </div>
             </div>
 
+            <!-- Banner Descalificado -->
+            <div v-if="data.descalificado" style="margin:0 0 1.25rem;background:linear-gradient(135deg,#fef2f2,#fee2e2);border:1.5px solid #fca5a5;border-radius:1rem;padding:1.25rem 1.5rem;display:flex;align-items:flex-start;gap:1rem;">
+              <div style="flex-shrink:0;width:2.5rem;height:2.5rem;background:#ef4444;border-radius:50%;display:flex;align-items:center;justify-content:center">
+                <svg style="width:1.25rem;height:1.25rem" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+              </div>
+              <div>
+                <p style="font-weight:800;font-size:1rem;color:#b91c1c;margin-bottom:.25rem">Equipo Descalificado</p>
+                <p style="font-size:.875rem;color:#dc2626;line-height:1.5">El evento ya inicio y su equipo no tiene los <strong>5 integrantes requeridos ({{ data.miembros?.length || 0 }}/5)</strong>. Los jueces no podran ver ni evaluar su proyecto.</p>
+              </div>
+            </div>
+
             <!-- Team & Project Card -->
             <div class="card" style="overflow:hidden">
               <div class="card-header" style="background:var(--card-muted);padding:1.5rem;display:flex;flex-direction:column;gap:1rem;align-items:flex-start">
@@ -106,7 +117,7 @@
                 </h3>
                   <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
                     <router-link v-if="data.es_lider && data.equipo" :to="{ path: `/participante/equipos/editar/${data.equipo.id}`, query: { evento_id: data.evento_inscrito?.id || undefined } }" 
-                      class="btn-manage" :class="{ 'opacity-50 cursor-not-allowed pointer-events-none': !data.evento_inscrito?.configuracion_lista }">
+                      class="btn-manage" :class="{ 'opacity-50 cursor-not-allowed pointer-events-none': !data.evento_inscrito?.configuracion_lista || data.descalificado }">
                       <svg style="width:1rem;height:1rem;margin-right:.25rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924-1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                       Gestionar
                     </router-link>
@@ -152,17 +163,6 @@
               </div>
             </div>
 
-
-              <!-- Banner Descalificado -->
-              <div v-if="data.descalificado" style="margin:0 1.5rem 1.5rem;background:linear-gradient(135deg,#fef2f2,#fee2e2);border:1.5px solid #fca5a5;border-radius:1rem;padding:1.25rem 1.5rem;display:flex;align-items:flex-start;gap:1rem;">
-                <div style="flex-shrink:0;width:2.5rem;height:2.5rem;background:#ef4444;border-radius:50%;display:flex;align-items:center;justify-content:center">
-                  <svg style="width:1.25rem;height:1.25rem" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
-                </div>
-                <div>
-                  <p style="font-weight:800;font-size:1rem;color:#b91c1c;margin-bottom:.25rem">Equipo Descalificado</p>
-                  <p style="font-size:.875rem;color:#dc2626;line-height:1.5">El evento ya inicio y su equipo no tiene los <strong>5 integrantes requeridos ({{ data.miembros?.length || 0 }}/5)</strong>. Los jueces no podran ver ni evaluar su proyecto.</p>
-                </div>
-              </div>
 
             <!-- ======================================== -->
             <!--  WIDGET: SOLICITUDES PENDIENTES (Líder)  -->
