@@ -378,6 +378,13 @@ router.get('/dashboard', authMiddleware, async (req: AuthRequest, res: Response,
           telefono: user?.telefono
         },
         es_lider: miembros.some(m => m.id === Number(userId) && m.es_lider),
+        descalificado: (() => {
+          if (!evento_inscrito) return false;
+          const now = new Date();
+          const eventoInicio = new Date(evento_inscrito.fecha_inicio);
+          const eventoActivo = now >= eventoInicio;
+          return eventoActivo && miembros.length < 5;
+        })(),
         participaciones,
         solicitudes_pendientes: (miembros.some(m => m.id === Number(userId) && m.es_lider) && equipo)
           ? await prisma.equipo_interacciones.findMany({
