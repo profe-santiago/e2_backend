@@ -8,7 +8,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${DB_PASS:-Rangers18}
       MYSQL_DATABASE: gestor_proyectos
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - db_data:/var/lib/mysql
     restart: unless-stopped
@@ -32,7 +32,7 @@ services:
       PRISMA_CLIENT_ENGINE_TYPE: library
       PRISMA_CLI_QUERY_ENGINE_TYPE: library
     ports:
-      - "3001:3001"
+      - "3002:3001"
     volumes:
       - backend_uploads:/app/uploads
     depends_on:
