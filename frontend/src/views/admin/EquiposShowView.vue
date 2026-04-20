@@ -579,7 +579,7 @@
                 style="
                   padding: 0.5rem;
                   color: #ef4444;
-                  background: #fef2f2;
+                  background: none;
                   border: none;
                   cursor: pointer;
                   border-radius: 0.5rem;
