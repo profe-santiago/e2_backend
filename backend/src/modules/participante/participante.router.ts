@@ -1556,14 +1556,25 @@ router.post('/solicitudes/:id/responder', authMiddleware, async (req: AuthReques
           return res.status(400).json({ success: false, message: 'El equipo ya está completo (máximo 5 integrantes)' });
       }
 
-      // 2. Verificar si el solicitante ya tiene equipo
-      const targetHasTeam = await prisma.equipo_miembros.findFirst({ where: { user_id: interaction.user_id } });
+      // 2. Verificar si el solicitante ya tiene equipo EN ESTE EVENTO
+      const proyectoDelEquipo = await prisma.proyectos.findFirst({ where: { equipo_id: interaction.equipo_id } });
+      const eventoIdDelEquipo = proyectoDelEquipo?.evento_id;
+
+      const targetHasTeam = eventoIdDelEquipo ? await prisma.equipo_miembros.findFirst({
+        where: {
+          user_id: interaction.user_id,
+          equipos: {
+            proyectos: { some: { evento_id: eventoIdDelEquipo } }
+          }
+        }
+      }) : null;
+
       if (targetHasTeam) {
           await prisma.equipo_interacciones.update({
               where: { id: BigInt(id as string) },
               data: { estado: 'RECHAZADA', respondido_en: new Date() }
           });
-          return res.status(400).json({ success: false, message: 'El solicitante ya es parte de otro equipo' });
+          return res.status(400).json({ success: false, message: 'El solicitante ya es parte de otro equipo en este evento' });
       }
 
       // 3. Aceptar
