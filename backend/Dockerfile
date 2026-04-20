@@ -5,7 +5,7 @@ WORKDIR /app
 
 # Archivos de empaquetado iniciales
 COPY package*.json ./
-RUN npm install
+RUN apk add --no-cache openssl && npm install
 
 # Copiar el todo el código
 COPY . .
@@ -24,8 +24,9 @@ WORKDIR /app
 COPY package*.json ./
 # Instalar solo las dependencias necesarias de producción
 RUN npm install --omit=dev
-# Instalar prisma CLI globalmente para poder usar db push al arrancar
-RUN npm install -g prisma
+# Instalar openssl para Prisma en Alpine y prisma CLI global
+RUN apk add --no-cache openssl && \
+    npm install -g prisma
 
 # Copiar estructura del compilado y prisma
 COPY --from=build /app/dist ./dist
