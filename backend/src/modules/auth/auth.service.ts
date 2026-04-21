@@ -1,0 +1,254 @@
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { AuthRepository } from './auth.repository';
+import { LoginDto, RegisterDto, AuthResponse } from './auth.types';
+import { config } from '../../config';
+import prisma from '../../utils/prisma';
+
+const authRepository = new AuthRepository();
+
+// Get user roles from the users.role enum field OR legacy junction tables
+async function getUserRoles(user: any): Promise<string[]> {
+  const roles: string[] = [];
+
+  // 1. Check new users.role enum field directly
+  // 2. Check new users.role enum field if no legacy roles found or to complement
+  if (user.role) {
+    const role = user.role.toString().toUpperCase();
+    if (role === 'ADMIN' && !roles.includes('Admin')) roles.push('Admin');
+    else if (role === 'JUEZ' && !roles.includes('Juez')) roles.push('Juez');
+    else if (role === 'PARTICIPANTE' && !roles.includes('Participante')) roles.push('Participante');
+  }
+
+  // Fallback: raw SQL in case the Prisma client has stale types and user.role was undefined in object
+  if (roles.length === 0) {
+    try {
+      const rows = await prisma.$queryRaw<Array<{ role: string }>>`
+        SELECT role FROM users WHERE id = ${user.id}
+      `;
+      if (rows.length > 0 && rows[0].role) {
+        const role = rows[0].role.toUpperCase();
+        if (role === 'ADMIN') roles.push('Admin');
+        else if (role === 'JUEZ') roles.push('Juez');
+        else if (role === 'PARTICIPANTE') roles.push('Participante');
+      }
+    } catch (err) {
+      console.error('[getUserRoles] Error:', err);
+    }
+  }
+
+  return roles.length > 0 ? roles : ['Participante'];
+}
+
+// Map role name to dashboard route
+function getDashboardRoute(roles: string[]): string {
+  if (roles.includes('Admin')) return '/admin/dashboard';
+  if (roles.includes('Juez')) return '/juez/dashboard';
+  if (roles.includes('Participante')) return '/participante/dashboard';
+  return '/login';
+}
+
+export class AuthService {
+  async register(data: RegisterDto): Promise<AuthResponse> {
+    const existingUser = await authRepository.findUserByEmail(data.email);
+    if (existingUser) {
+      throw { status: 400, message: 'El email ya está registrado' };
+    }
+
+    const existingName = await prisma.users.findFirst({ where: { name: data.name } });
+    if (existingName) {
+      throw { status: 400, message: 'El nombre ya está en uso' };
+    }
+
+    const hashedPassword = await bcrypt.hash(data.password, 12);
+
+    const user = await authRepository.createUser({
+      name: data.name,
+      email: data.email,
+      password: hashedPassword,
+      role: 'PARTICIPANTE',
+    });
+
+    const token = jwt.sign({ id: Number(user.id) }, config.jwtSecret as jwt.Secret, { expiresIn: config.jwtExpiresIn as any });
+    
+    // No legacy table integration needed anymore
+
+    const roles = await getUserRoles(user);
+    const dashboardRoute = getDashboardRoute(roles);
+
+    return {
+      success: true,
+      message: 'Usuario registrado exitosamente',
+      data: {
+        user: {
+          id: Number(user.id),
+          name: user.name,
+          email: user.email,
+          roles,
+          carrera: (user as any).carrera || null,
+          no_control: (user as any).no_control || null,
+          telefono: (user as any).telefono || null,
+        },
+        token,
+        dashboardRoute,
+      },
+    };
+  }
+
+  async login(data: LoginDto): Promise<AuthResponse> {
+    const user = await authRepository.findUserByEmail(data.email);
+    if (!user) {
+      throw { status: 401, message: 'Credenciales inválidas' };
+    }
+
+    const isValidPassword = await bcrypt.compare(data.password, user.password);
+    if (!isValidPassword) {
+      throw { status: 401, message: 'Credenciales inválidas' };
+    }
+
+    const token = jwt.sign({ id: Number(user.id) }, config.jwtSecret as jwt.Secret, { expiresIn: config.jwtExpiresIn as any });
+    const roles = await getUserRoles(user);
+    const dashboardRoute = getDashboardRoute(roles);
+
+    return {
+      success: true,
+      message: 'Login exitoso',
+      data: {
+        user: {
+          id: Number(user.id),
+          name: user.name,
+          email: user.email,
+          roles,
+          carrera: (user as any).carrera || null,
+          no_control: (user as any).no_control || null,
+          telefono: (user as any).telefono || null,
+        },
+        token,
+        dashboardRoute,
+      },
+    };
+  }
+
+  async getMe(userId: number) {
+    const user = await authRepository.findUserById(userId);
+    if (!user) {
+      throw { status: 404, message: 'Usuario no encontrado' };
+    }
+
+    const roles = await getUserRoles(user);
+
+    return {
+      success: true,
+      data: {
+        id: Number(user.id),
+        name: user.name,
+        email: user.email,
+        roles,
+        carrera: (user as any).carrera || null,
+        no_control: (user as any).no_control || null,
+        telefono: (user as any).telefono || null,
+        created_at: user.created_at,
+      },
+    };
+  }
+
+  async updateProfile(userId: number, data: { name: string; email: string }) {
+    const user = await authRepository.findUserById(userId);
+    if (!user) {
+      throw { status: 404, message: 'Usuario no encontrado' };
+    }
+
+    // Uniqueness checks
+    if (data.email && data.email !== user.email) {
+      const existing = await authRepository.findUserByEmail(data.email);
+      if (existing && Number(existing.id) !== userId) {
+        throw { status: 400, message: 'El email ya está en uso por otro usuario' };
+      }
+    }
+
+    if (data.name && data.name !== user.name) {
+      const existingName = await prisma.users.findFirst({ where: { name: data.name } });
+      if (existingName && Number(existingName.id) !== userId) {
+        throw { status: 400, message: 'El nombre ya está en uso por otro usuario' };
+      }
+    }
+
+    const telefono = (data as any).telefono;
+    if (telefono && telefono !== user.telefono) {
+      const existingPhone = await prisma.users.findFirst({ where: { telefono } });
+      if (existingPhone && Number(existingPhone.id) !== userId) {
+        throw { status: 400, message: 'El número de teléfono ya está en uso por otro usuario' };
+      }
+    }
+
+    const no_control = (data as any).no_control;
+    if (no_control && no_control !== user.no_control) {
+      const existingControl = await prisma.users.findFirst({ where: { no_control } });
+      if (existingControl && Number(existingControl.id) !== userId) {
+        throw { status: 400, message: 'El número de control ya está en uso por otro usuario' };
+      }
+    }
+
+    const updated = await prisma.users.update({
+      where: { id: BigInt(userId) },
+      data: {
+        name: data.name || user.name,
+        email: data.email || user.email,
+        no_control: (data as any).no_control ?? (user as any).no_control,
+        carrera: (data as any).carrera ?? (user as any).carrera,
+        telefono: (data as any).telefono ?? (user as any).telefono,
+        updated_at: new Date(),
+      },
+    });
+
+    const roles = await getUserRoles(updated);
+
+    return {
+      success: true,
+      message: 'Perfil actualizado correctamente',
+      data: {
+        id: Number(updated.id),
+        name: updated.name,
+        email: updated.email,
+        roles,
+      },
+    };
+  }
+
+  async updatePassword(userId: number, data: { current_password: string; password: string; password_confirmation: string }) {
+    const user = await authRepository.findUserById(userId);
+    if (!user) {
+      throw { status: 404, message: 'Usuario no encontrado' };
+    }
+
+    // Validate current password
+    const isValid = await bcrypt.compare(data.current_password, user.password);
+    if (!isValid) {
+      throw { status: 400, message: 'La contraseña actual es incorrecta' };
+    }
+
+    // Validate confirmation
+    if (data.password !== data.password_confirmation) {
+      throw { status: 400, message: 'Las contraseñas no coinciden' };
+    }
+
+    if (data.password.length < 8) {
+      throw { status: 400, message: 'La contraseña debe tener al menos 8 caracteres' };
+    }
+
+    const hashed = await bcrypt.hash(data.password, 12);
+
+    await prisma.users.update({
+      where: { id: BigInt(userId) },
+      data: {
+        password: hashed,
+        updated_at: new Date(),
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Contraseña actualizada correctamente',
+    };
+  }
+}

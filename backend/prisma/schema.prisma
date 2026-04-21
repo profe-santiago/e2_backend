@@ -1,0 +1,216 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model equipos {
+  id                   BigInt                 @id @default(autoincrement()) @db.UnsignedBigInt
+  nombre               String                 @unique @db.VarChar(255)
+  max_programadores    Int                    @default(2)
+  max_disenadores      Int                    @default(1)
+  max_testers          Int                    @default(1)
+  created_at           DateTime               @default(now())
+  updated_at           DateTime
+  equipo_interacciones equipo_interacciones[]
+  equipo_miembros      equipo_miembros[]
+  proyectos            proyectos[]
+}
+
+model eventos {
+  id                   BigInt                 @id @default(autoincrement()) @db.UnsignedBigInt
+  nombre               String                 @db.VarChar(255)
+  descripcion          String?                @db.Text
+  fecha_inicio         DateTime
+  fecha_fin            DateTime
+  max_jueces           Int                    @default(5)
+
+  created_at           DateTime               @default(now())
+  updated_at           DateTime
+  certificados         certificados[]
+  evaluacion_criterios evaluacion_criterios[]
+  evento_jueces        evento_jueces[]
+  proyectos            proyectos[]
+}
+
+model carreras {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  nombre     String    @db.VarChar(255)
+  clave      String?   @db.VarChar(255)
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+}
+
+model proyectos {
+  id               BigInt             @id @default(autoincrement()) @db.UnsignedBigInt
+  equipo_id        BigInt             @db.UnsignedBigInt
+  evento_id        BigInt             @db.UnsignedBigInt
+  nombre           String             @db.VarChar(255)
+  descripcion      String?            @db.Text
+  repositorio_url  String?            @db.VarChar(255)
+  created_at       DateTime           @default(now())
+  updated_at       DateTime
+  evaluaciones     evaluaciones[]
+  proyecto_avances proyecto_avances[]
+  equipos          equipos            @relation(fields: [equipo_id], references: [id], onDelete: Cascade, map: "proyectos_ibfk_9")
+  eventos          eventos            @relation(fields: [evento_id], references: [id], onDelete: Cascade, map: "proyectos_ibfk_10")
+
+  @@index([equipo_id], map: "equipo_id")
+  @@index([evento_id], map: "evento_id")
+}
+
+model users {
+  id                   BigInt                 @id @default(autoincrement()) @db.UnsignedBigInt
+  name                 String                 @db.VarChar(255)
+  email                String                 @unique @db.VarChar(255)
+  password             String                 @db.VarChar(255)
+  avatar               String?                @db.VarChar(255)
+  created_at           DateTime               @default(now())
+  updated_at           DateTime
+  carrera              String?                @db.VarChar(255)
+  no_control           String?                @db.VarChar(255)
+  role                 users_role             @default(PARTICIPANTE)
+  telefono             String?                @db.VarChar(255)
+  certificados         certificados[]
+  equipo_interacciones equipo_interacciones[]
+  equipo_miembros      equipo_miembros[]
+  evaluaciones         evaluaciones[]
+  evento_jueces        evento_jueces[]
+  user_preferences     user_preferences?
+}
+
+model certificados {
+  id           BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id      BigInt   @db.UnsignedBigInt
+  evento_id    BigInt   @db.UnsignedBigInt
+  tipo         String   @db.VarChar(255)
+  archivo_path String?  @db.VarChar(255)
+  codigo_qr    String?  @db.VarChar(255)
+  created_at   DateTime @default(now())
+  eventos      eventos  @relation(fields: [evento_id], references: [id], onDelete: Cascade)
+  users        users    @relation(fields: [user_id], references: [id])
+
+  @@index([evento_id], map: "certificados_evento_id_fkey")
+  @@index([user_id], map: "certificados_user_id_fkey")
+}
+
+model equipo_interacciones {
+  id            BigInt                      @id @default(autoincrement()) @db.UnsignedBigInt
+  equipo_id     BigInt                      @db.UnsignedBigInt
+  user_id       BigInt                      @db.UnsignedBigInt
+  tipo          equipo_interacciones_tipo
+  estado        equipo_interacciones_estado @default(PENDIENTE)
+  mensaje       String?                     @db.Text
+  perfil_id     BigInt?                     @db.UnsignedBigInt
+  respondido_en DateTime?
+  created_at    DateTime                    @default(now())
+  equipos       equipos                     @relation(fields: [equipo_id], references: [id], onDelete: Cascade)
+  users         users                       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  perfiles      perfiles?                   @relation(fields: [perfil_id], references: [id], onDelete: SetNull)
+
+  @@index([equipo_id], map: "equipo_interacciones_equipo_id_fkey")
+  @@index([user_id], map: "equipo_interacciones_user_id_fkey")
+}
+
+model equipo_miembros {
+  id         BigInt              @id @default(autoincrement()) @db.UnsignedBigInt
+  equipo_id  BigInt              @db.UnsignedBigInt
+  user_id    BigInt              @db.UnsignedBigInt
+  rol        String              @default("PROGRAMADOR") @db.VarChar(50)
+  created_at DateTime            @default(now())
+  equipos    equipos             @relation(fields: [equipo_id], references: [id], onDelete: Cascade)
+  users      users               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([equipo_id, user_id])
+  @@index([user_id], map: "equipo_miembros_user_id_fkey")
+}
+
+model evaluacion_criterios {
+  id           BigInt         @id @default(autoincrement()) @db.UnsignedBigInt
+  evento_id    BigInt         @db.UnsignedBigInt
+  nombre       String         @db.VarChar(255)
+  ponderacion  Decimal        @db.Decimal(5, 2)
+  eventos      eventos        @relation(fields: [evento_id], references: [id], onDelete: Cascade)
+  evaluaciones evaluaciones[]
+
+  @@index([evento_id], map: "evaluacion_criterios_evento_id_fkey")
+}
+
+model evaluaciones {
+  id                   BigInt               @id @default(autoincrement()) @db.UnsignedBigInt
+  proyecto_id          BigInt               @db.UnsignedBigInt
+  juez_id              BigInt               @db.UnsignedBigInt
+  criterio_id          BigInt               @db.UnsignedBigInt
+  puntuacion           Decimal              @db.Decimal(5, 2)
+  comentario           String?              @db.Text
+  created_at           DateTime             @default(now())
+  evaluacion_criterios evaluacion_criterios @relation(fields: [criterio_id], references: [id], onDelete: Cascade)
+  users                users                @relation(fields: [juez_id], references: [id], onDelete: Cascade)
+  proyectos            proyectos            @relation(fields: [proyecto_id], references: [id], onDelete: Cascade)
+
+  @@index([criterio_id], map: "evaluaciones_criterio_id_fkey")
+  @@index([juez_id], map: "evaluaciones_juez_id_fkey")
+  @@index([proyecto_id], map: "evaluaciones_proyecto_id_fkey")
+}
+
+model evento_jueces {
+  evento_id BigInt  @db.UnsignedBigInt
+  user_id   BigInt  @db.UnsignedBigInt
+  eventos   eventos @relation(fields: [evento_id], references: [id], onDelete: Cascade)
+  users     users   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@id([evento_id, user_id])
+  @@index([user_id], map: "evento_jueces_user_id_fkey")
+}
+
+model proyecto_avances {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  proyecto_id BigInt    @db.UnsignedBigInt
+  descripcion String    @db.Text
+  fecha       DateTime  @default(now())
+  proyectos   proyectos @relation(fields: [proyecto_id], references: [id], onDelete: Cascade)
+
+  @@index([proyecto_id], map: "proyecto_avances_proyecto_id_fkey")
+}
+
+model user_preferences {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id    BigInt   @unique @db.UnsignedBigInt
+  settings   String?  @db.Text
+  created_at DateTime @default(now())
+  updated_at DateTime
+  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+enum equipo_interacciones_tipo {
+  INVITACION
+  SOLICITUD
+}
+
+
+
+enum equipo_interacciones_estado {
+  PENDIENTE
+  ACEPTADA
+  RECHAZADA
+}
+
+enum users_role {
+  ADMIN
+  JUEZ
+  PARTICIPANTE
+}
+
+model perfiles {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  nombre     String    @db.VarChar(255)
+  created_at DateTime? @default(now())
+  updated_at DateTime?
+  deleted_at DateTime?
+  equipo_interacciones equipo_interacciones[]
+}
