@@ -1,4 +1,4 @@
-import prisma from '../../utils/prisma';
+import prisma from '../../../prisma.config';
 import { StoreEvaluacionDto } from './juez.types';
 
 export class JuezRepository {

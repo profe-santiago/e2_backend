@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { AuthRepository } from './auth.repository';
 import { LoginDto, RegisterDto, AuthResponse } from './auth.types';
 import { config } from '../../config';
-import prisma from '../../utils/prisma';
+import prisma from '../../../prisma.config';
 
 const authRepository = new AuthRepository();
 

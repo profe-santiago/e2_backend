@@ -1,6 +1,6 @@
 import { EquipoRepository } from './equipo.repository';
 import { UpdateEquipoDto, AddMiembroDto, EquipoQueryOptions } from './equipo.types';
-import prisma from '../../utils/prisma';
+import prisma from '../../../prisma.config';
 
 const equipoRepository = new EquipoRepository();
 
@@ -190,7 +190,7 @@ export class EquipoService {
   }
 
   async removeMember(equipoId: number, userId: number) {
-    const prisma = (await import('../../utils/prisma')).default;
+    const prisma = (await import('../../../prisma.config')).default;
     
     // Check if the member being removed is a LIDER
     const membership = await prisma.equipo_miembros.findFirst({
