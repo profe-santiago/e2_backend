@@ -9,3 +9,4 @@ dist/
 
 # Backend
 backend/src/generated/prisma
+backend/scratch/
