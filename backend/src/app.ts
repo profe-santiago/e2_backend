@@ -24,7 +24,7 @@ const swaggerOptions = {
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
 import { authRouter } from './modules/auth/auth.router';
-import { userRouter } from './modules/users/user.router';
+import { userRouter } from './users/user.router';
 import { eventoRouter } from './modules/eventos/evento.router';
 import { criterioRouter } from './modules/criterios/criterio.router';
 import { equipoRouter } from './modules/equipos/equipo.router';

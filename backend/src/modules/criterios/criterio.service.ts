@@ -1,6 +1,6 @@
 import { CriterioRepository } from './criterio.repository';
 import { CreateCriterioDto, UpdateCriterioDto } from './criterio.types';
-import prisma from '../../utils/prisma';
+import prisma from '../../../prisma.config';
 
 const criterioRepository = new CriterioRepository();
 

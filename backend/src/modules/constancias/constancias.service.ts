@@ -1,6 +1,6 @@
 import { ConstanciaRepository } from './constancias.repository';
 import { RankingService } from '../resultados/ranking.service';
-import prisma from '../../utils/prisma';
+import prisma from '../../../prisma.config';
 
 const constanciaRepository = new ConstanciaRepository();
 const rankingService = new RankingService();

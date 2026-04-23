@@ -89,7 +89,7 @@ export class EventoService {
     });
 
     if (data.jueces && data.jueces.length > 0) {
-      const prisma = (await import('../../utils/prisma')).default;
+      const prisma = (await import('../../../prisma.config')).default;
       const conflicts: any[] = await prisma.$queryRaw`
         SELECT u.name 
         FROM users u
@@ -134,7 +134,7 @@ export class EventoService {
     await eventoRepository.update(id, data);
 
     if (data.jueces) {
-      const prisma = (await import('../../utils/prisma')).default;
+      const prisma = (await import('../../../prisma.config')).default;
       const conflicts: any[] = await prisma.$queryRaw`
         SELECT u.name 
         FROM users u
@@ -199,7 +199,7 @@ export class EventoService {
     if (alreadyAssigned) throw { status: 400, message: 'El juez ya está asignado a este evento' };
 
     // 3. Conflict check: User must not be a participant in this event
-    const prisma = (await import('../../utils/prisma')).default;
+    const prisma = (await import('../../../prisma.config')).default;
     const conflicts: any[] = await prisma.$queryRaw`
       SELECT u.name 
       FROM users u

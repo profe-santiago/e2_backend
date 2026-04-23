@@ -1,4 +1,4 @@
-import prisma from '../../utils/prisma';
+import prisma from '../../../prisma.config';
 import { CreateProyectoDto, UpdateProyectoDto, ProyectoQueryOptions } from './proyecto.types';
 
 export class ProyectoRepository {
