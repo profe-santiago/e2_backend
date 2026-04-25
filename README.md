@@ -277,7 +277,7 @@ erDiagram
         int id
         string nombre
     }
-```
+
 
     users ||--o{ equipo_miembros : participa
     users ||--o{ equipo_interacciones : interacciones
@@ -301,7 +301,7 @@ erDiagram
     evaluacion_criterios ||--o{ evaluaciones : puntua
 
     perfiles ||--o{ equipo_interacciones : perfil
-
+```
 ---
 
 ## ⚙️ Instalación
