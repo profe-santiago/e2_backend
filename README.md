@@ -170,137 +170,137 @@ e2_backend/
 ```mermaid
 erDiagram
     users {
-        BigInt id PK
-        String name
-        String email UK
-        String password
-        String avatar
-        String carrera
-        String no_control
-        String telefono
-        Enum role "ADMIN | JUEZ | PARTICIPANTE"
+        int id
+        string name
+        string email
+        string password
+        string avatar
+        string carrera
+        string no_control
+        string telefono
+        string role
     }
 
     eventos {
-        BigInt id PK
-        String nombre
-        String descripcion
-        DateTime fecha_inicio
-        DateTime fecha_fin
-        Int max_jueces
+        int id
+        string nombre
+        string descripcion
+        string fecha_inicio
+        string fecha_fin
+        int max_jueces
     }
 
     equipos {
-        BigInt id PK
-        String nombre UK
-        Int max_programadores
-        Int max_disenadores
-        Int max_testers
+        int id
+        string nombre
+        int max_programadores
+        int max_disenadores
+        int max_testers
     }
 
     proyectos {
-        BigInt id PK
-        BigInt equipo_id FK
-        BigInt evento_id FK
-        String nombre
-        String descripcion
-        String repositorio_url
+        int id
+        int equipo_id
+        int evento_id
+        string nombre
+        string descripcion
+        string repositorio_url
     }
 
     equipo_miembros {
-        BigInt id PK
-        BigInt equipo_id FK
-        BigInt user_id FK
-        String rol
+        int id
+        int equipo_id
+        int user_id
+        string rol
     }
 
     equipo_interacciones {
-        BigInt id PK
-        BigInt equipo_id FK
-        BigInt user_id FK
-        Enum tipo "INVITACION | SOLICITUD"
-        Enum estado "PENDIENTE | ACEPTADA | RECHAZADA"
-        String mensaje
-        BigInt perfil_id FK
+        int id
+        int equipo_id
+        int user_id
+        string tipo
+        string estado
+        string mensaje
+        int perfil_id
     }
 
     evaluacion_criterios {
-        BigInt id PK
-        BigInt evento_id FK
-        String nombre
-        Decimal ponderacion
+        int id
+        int evento_id
+        string nombre
+        float ponderacion
     }
 
     evaluaciones {
-        BigInt id PK
-        BigInt proyecto_id FK
-        BigInt juez_id FK
-        BigInt criterio_id FK
-        Decimal puntuacion
-        String comentario
+        int id
+        int proyecto_id
+        int juez_id
+        int criterio_id
+        float puntuacion
+        string comentario
     }
 
     evento_jueces {
-        BigInt evento_id PK_FK
-        BigInt user_id PK_FK
+        int evento_id
+        int user_id
     }
 
     proyecto_avances {
-        BigInt id PK
-        BigInt proyecto_id FK
-        String descripcion
-        DateTime fecha
+        int id
+        int proyecto_id
+        string descripcion
+        string fecha
     }
 
     certificados {
-        BigInt id PK
-        BigInt user_id FK
-        BigInt evento_id FK
-        String tipo
-        String archivo_path
-        String codigo_qr
+        int id
+        int user_id
+        int evento_id
+        string tipo
+        string archivo_path
+        string codigo_qr
     }
 
     user_preferences {
-        BigInt id PK
-        BigInt user_id FK_UK
-        String settings
+        int id
+        int user_id
+        string settings
     }
 
     carreras {
-        BigInt id PK
-        String nombre
-        String clave
+        int id
+        string nombre
+        string clave
     }
 
     perfiles {
-        BigInt id PK
-        String nombre
+        int id
+        string nombre
     }
-
-    users ||--o{ equipo_miembros : "participa en"
-    users ||--o{ equipo_interacciones : "recibe/envía"
-    users ||--o{ evaluaciones : "califica como juez"
-    users ||--o{ certificados : "obtiene"
-    users ||--o{ evento_jueces : "es juez en"
-    users ||--o| user_preferences : "tiene"
-
-    equipos ||--o{ equipo_miembros : "tiene miembros"
-    equipos ||--o{ equipo_interacciones : "genera"
-    equipos ||--o{ proyectos : "desarrolla"
-
-    eventos ||--o{ proyectos : "contiene"
-    eventos ||--o{ evaluacion_criterios : "define rúbrica"
-    eventos ||--o{ evento_jueces : "asigna jueces"
-    eventos ||--o{ certificados : "emite"
-
-    proyectos ||--o{ evaluaciones : "es evaluado"
-    proyectos ||--o{ proyecto_avances : "registra avances"
-
-    evaluacion_criterios ||--o{ evaluaciones : "se puntúa en"
-
-    perfiles ||--o{ equipo_interacciones : "define perfil"
 ```
+
+    users ||--o{ equipo_miembros : participa
+    users ||--o{ equipo_interacciones : interacciones
+    users ||--o{ evaluaciones : evalua
+    users ||--o{ certificados : obtiene
+    users ||--o{ evento_jueces : juez
+    users ||--o| user_preferences : tiene
+
+    equipos ||--o{ equipo_miembros : miembros
+    equipos ||--o{ equipo_interacciones : acciones
+    equipos ||--o{ proyectos : proyectos
+
+    eventos ||--o{ proyectos : contiene
+    eventos ||--o{ evaluacion_criterios : criterios
+    eventos ||--o{ evento_jueces : jueces
+    eventos ||--o{ certificados : certificados
+
+    proyectos ||--o{ evaluaciones : evaluaciones
+    proyectos ||--o{ proyecto_avances : avances
+
+    evaluacion_criterios ||--o{ evaluaciones : puntua
+
+    perfiles ||--o{ equipo_interacciones : perfil
 
 ---
 
