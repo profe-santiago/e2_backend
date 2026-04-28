@@ -1,4 +1,4 @@
-import prisma from '../../utils/prisma';
+import prisma from '../../prisma.config';
 import { CreateEventoDto, UpdateEventoDto, EventoQueryOptions } from './evento.types';
 
 export class EventoRepository {

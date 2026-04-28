@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { UserService } from './user.service';
 import { createUserSchema, updateUserSchema } from './user.schema';
-import { authMiddleware, AuthRequest } from '../../middlewares/auth.middleware';
+import { authMiddleware, AuthRequest } from '../middlewares/auth.middleware';
 
 const router = Router();
 const userService = new UserService();
@@ -85,7 +85,7 @@ router.get('/exportar', authMiddleware, async (req: Request, res: Response, next
     }
 
     // Fetch ALL users (no pagination for export)
-    const prisma = (await import('../../utils/prisma')).default;
+    const prisma = (await import('../prisma.config')).default;
     const usuarios = await prisma.users.findMany({
       where,
       orderBy: { created_at: 'desc' }

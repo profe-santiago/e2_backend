@@ -1,4 +1,4 @@
-import prisma from '../../utils/prisma';
+import prisma from '../../prisma.config';
 import { StoreAvanceDto } from './avance.types';
 
 export class AvanceRepository {
@@ -58,6 +58,14 @@ export class AvanceRepository {
         ...(fecha && { fecha })
       }
     });
+  }
+
+  async getEventoByProyectoId(proyectoId: number) {
+    const proyecto = await prisma.proyectos.findUnique({
+      where: { id: BigInt(proyectoId) },
+      include: { eventos: true }
+    });
+    return proyecto?.eventos;
   }
 }
 
